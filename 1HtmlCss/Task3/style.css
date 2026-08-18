@@ -1,0 +1,305 @@
+.upperBar,
+.categories {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    row-gap: 30px;
+    padding: 0;
+}
+
+.categories li>* {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.upperBar>*,
+.categories>* {
+    flex: 1;
+    text-align: center;
+
+}
+
+li {
+    margin-top: 0px;
+}
+
+nav {
+    margin: 0;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 200px;
+    margin-right: 0px;
+}
+
+main {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 80vh;
+}
+
+main>* {
+    flex: 1;
+    margin-left: 100px;
+    /* margin-right: 200px; */
+    margin-bottom: 200px;
+}
+
+.logo {
+    font-family: Sofia;
+    font-size: 2.5em;
+    color: rgb(229, 39, 24);
+}
+
+.categories {
+    text-decoration: none;
+    list-style: none;
+}
+
+.categories li p {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-weight: lighter;
+}
+
+.categories li p:not(.active_page) {
+    color: rgba(67, 67, 67);
+}
+
+button {
+    height: 35px;
+    border-width: 0;
+
+}
+
+.cart_button {
+    background-color: rgb(229, 39, 24);
+    border-radius: 11px;
+    width: 35px;
+    margin: 20px;
+}
+
+.sign_button {
+    background-color: white;
+    border-radius: 5px;
+    width: 100px;
+
+
+}
+
+.active_page {
+    color: rgb(229, 39, 24);
+    position: relative;
+
+}
+
+.active_page::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 100%;
+    height: 2px;
+    background: rgb(229, 39, 24);
+}
+
+body {
+    background-color: rgb(241, 244, 253);
+}
+
+.adv figure img {
+    width: 100%;
+    max-width: 500px;
+    min-width: 250px;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    /* object-fit: cover; */
+    /* margin-right: 110px; */
+}
+
+.slogan {
+    font-size: 4em;
+    width: 500px;
+    font-weight: 800;
+}
+
+.slogan,
+.description {
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.description {
+    line-height: 2;
+    color: rgb(109, 109, 109);
+    font-weight: 500;
+}
+
+.orange_txt {
+    color: rgb(229, 39, 24);
+}
+
+.botBlank {
+    margin-bottom: 100px;
+}
+
+.info_buttons {
+    position: relative;
+    left: 0;
+    margin-top: 20px;
+
+}
+
+.info_buttons button {
+    margin-right: 20px;
+    width: 110px;
+    border-radius: 4px;
+    height: 50px;
+    font-weight: bold;
+}
+
+
+.order_button {
+    background-color: white;
+}
+
+.menu_button {
+    background-color: rgb(241, 244, 253);
+    color: rgb(229, 39, 24)
+}
+
+big {
+    display: flex;
+}
+
+@media (max-width: 1200px) {
+    main {
+        flex-direction: column;
+    }
+
+    .adv figure img {
+        width: 100%;
+        height: 100%;
+        align-items: center;
+    }
+
+    .info {
+        align-items: center;
+        margin: 0;
+    }
+
+    .info>* {
+        max-width: 720px;
+        margin: 50px;
+    }
+
+    .upperBar {
+        flex: 1;
+    }
+
+    main>*{
+        margin-left: 50px;
+        margin-right: 50px;
+    }
+
+    .big {
+        display: flex;
+        flex-direction: column;
+        max-width: 100%;
+    }
+
+    .logo {
+        margin: 0;
+        order: 2;
+        padding-top: 15px;
+    }
+
+    .upperBar {
+        flex-direction: column;
+        row-gap: 0;
+    }
+
+    .categories {
+        flex-direction: row;
+    }
+
+    .info {
+        max-width: fit-content;
+        flex-wrap: wrap;
+        max-width: 500px;
+        width: 80%;
+        order: 2;
+        flex: auto;
+        row-gap: 30px;
+    }
+
+
+    .slogan {
+        font-size: 2em;
+        max-width: 500px;
+        width: 80%;
+        margin: 0;
+    }
+
+
+    main>* {
+        margin: 1rem;
+    }
+
+    .corner_buttons {
+        order: 1;
+        display: flex;
+        flex-direction: row;
+        align-self: flex-end;
+    }
+
+    .corner_buttons>* {
+        margin: 10px;
+    }
+
+    nav {
+        order: 3;
+    }
+
+    .adv {
+        order: 1;
+        flex: auto;
+        max-height: 280px;
+    }
+
+    .adv figure img {
+        /* width: fit-content; */
+        max-width: 150px;
+        max-height: 250px;
+        /* min-width: 250px; */
+        height: auto;
+        border-radius: 50%;
+    }
+
+    .adv figure{
+        margin: 0;
+        max-height: 250px;
+    }
+
+    .description{
+        margin: 0;
+    }
+
+    .info_buttons{
+        margin: 10px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .info_buttons button{
+        margin: 0px;
+    }
+}
+
+@media (max-width: 599px) {
+    
+
+}

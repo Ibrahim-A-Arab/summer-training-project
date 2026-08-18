@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Task Manager</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="page flex column padding50">
+            <header class="top_sec flex row spacing center">
+                <h1 class="title_txt large_txt">MyTaskManager</h1>
+                <button class="save_button sec_button large_txt" ">💾</button>
+            </header>
+            <div class="mid_sec flex column">
+                <div class="above_table flex row width100 center">
+                    <input class="sec_button" type="search" id="search"
+                        placeholder="search tasks ...">
+                    <select id="sort_tasks" class="sec_button">
+                        <option value="none">Sort by ...</option>
+                        <option value="date">Newest First</option>
+                        <option value="date_rev">Oldest First</option>
+                        <option value="az">Sort A - Z</option>
+                        <option value="za">Sort Z - A</option>
+                    </select>
+                    <select id="filter_tasks" class="sec_button" id="filter">
+                        <option value="all">All</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <button id="add_button" class="sec_button add_button"
+                        onclick="show_lower_sec();">Add Task</button>
+                </div>
+                <div class="table_container width100 border_radius8">
+                    <table class="table width100 border_radius8">
+                        <thead class="width100">
+                            <th>Done</th>
+                            <th>Task</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th class="actions_col ">Actions</th>
+                        </thead>
+                        <tbody id="table_body"
+                            class="table_body center_children">
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="under_table flex row">
+                    <div class="task-progress">
+                        <div class="progress-info">
+                            <span>Progress</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+
+                        <div class="progress-track">
+                            <div id="progressBar" class="progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="lower_hidden"
+                class="lower_sec hidden flex column width100   ">
+                <form id="myForm" action="task_form"
+                    class="fform flex column width100">
+                    <label for="task_name">Task Name:</label>
+                    <input id="task_name_field" class="sec_button" type="text"
+                        placeholder="Task Name...">
+                    <label for="task_due_date">Due Date:</label>
+                    <input id="task_due_date_field" class="sec_button"
+                        type="date" placeholder="Due Date...">
+                    <label for="task_severity">Severity:</label>
+                    <select id="task_severity_select" class="sec_button"
+                        name="Priority" id="priority"
+                        aria-placeholder="priority">
+                        <option value="none">select task severity</option>
+                        <option value="low">Low</option>
+                        <option value="med">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </form>
+                <div class="save_cancel flex row width100 upper_margin15">
+                    <button class="cancel_button sec_button width100"
+                        onclick="hide_lower_sec();">Cancel</button>
+                    <button
+                        class="save_button sec_button width100"
+                        onclick="add_task()">Save</button>
+                </div>
+            </div>
+
+        </div>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="script.js"></script>
+    </body>
+</html>

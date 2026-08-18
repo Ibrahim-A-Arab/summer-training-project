@@ -1,0 +1,257 @@
+.page {
+
+    display: grid;
+    grid-template-columns: 8fr 2fr;
+    gap: 2rem;
+    padding: 50px;
+}
+
+.main_display {
+    display: flex;
+    flex-direction: column;
+}
+
+aside {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}
+
+aside>* {
+    border: 1px solid #ececec;
+    border-radius: 28px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: 20px;
+    gap: 50px;
+}
+
+.items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+
+}
+
+.card figure{
+    width: 100%;
+}
+
+.card figure img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+
+
+.orange_button {
+    border-radius: 28px;
+    background-color: rgb(228, 87, 40);
+    height: 44px;
+    padding: 0 40px;
+    border-width: 0;
+    color: white;
+}
+
+.menu {
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 6px;
+    border: 1px solid #ececec;
+    border-radius: 28px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    /* Should do for all boxes and navs */
+    align-self: center;
+    width: 100%;
+}
+
+.menu button{
+    flex: 1;
+}
+
+.inactive_page {
+    background-color: rgb(251, 230, 224);
+    border-radius: 28px;
+    height: 44px;
+    padding: 0 40px;
+    border-width: 0;
+    color: rgb(83, 71, 69);
+
+}
+
+.categories {
+    color: rgb(83, 71, 69);
+    font-size: 2em;
+    font-family: sans-serif;
+    text-align: left;
+}
+
+.card img {
+    /* max-height: 250px; */
+    border-radius: 28px 28px 0 0;
+}
+
+.item_name {
+    color: rgb(83, 71, 69);
+    text-align: center;
+}
+
+.card h6 {
+    background-color: rgb(248, 248, 248);
+    display: inline-flex;
+    padding: 6px;
+    border: 1px solid #ececec;
+    border-radius: 28px;
+    align-items: center;
+    margin: 0;
+
+}
+
+.tags {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.price_tag {
+    text-align: center;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.card button {
+    padding: 0 70px;
+}
+
+.bistro h6 {
+    text-align: right;
+    margin: 0;
+}
+
+.open_status {
+    color: rgb(0, 135, 0);
+}
+
+.delivery{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.delivery >* {
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 0 16px;
+
+    border: 1px solid #eee;
+    border-radius: 22px;
+
+    color: #534745;
+}
+
+.delivery_type .arrow {
+    margin-left: auto;
+}
+
+
+.space_order {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+}
+
+.space_order>* {
+    margin: 5px;
+}
+
+.tip_selector {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 24px;
+    overflow: hidden;
+    /* keeps corners clipped */
+}
+
+.tip_selector button {
+    flex: 1;
+    height: 44px;
+    padding: 0 25px;
+    border: none;
+    border-right: 1px solid #ddd;
+    background: white;
+}
+
+.tip_selector button:last-child {
+    border-right: none;
+}
+
+.tip_selector button:hover {
+    background: #f5f5f5;
+}
+
+
+
+.centered_h6 {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.centered_h6>* {
+    margin: 5px;
+}
+
+.orange {
+    color: rgb(228, 87, 40);
+}
+
+.order .orange_button {
+    width: 100%;
+}
+
+@media (max-width: 1180px) {
+    .page {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .items {
+        grid-template-columns: repeat(1, 1fr);
+    }
+
+    .menu {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
+        gap: 8px;
+    }
+
+    .menu button {
+        width: 100%;
+    }
+
+    img{
+        max-height: 350px;
+    }
+}
+
+@media (max-width: 600px){
+    .menu{
+        grid-template-columns: repeat(1,1fr);
+    }
+    .tip_selector button{
+        padding: 0 10px;
+    }
+}

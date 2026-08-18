@@ -1,0 +1,181 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f9;
+}
+
+.page {
+    max-width: 1200px;
+    margin: auto;
+    gap: 30px;
+}
+
+.table {
+    background: white;
+    overflow: hidden;
+    border-collapse: collapse;
+    table-layout: fixed;
+
+}
+
+th {
+    background: #393939;
+    color: white;
+}
+
+th,
+td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+
+tbody tr {
+    border-bottom: 1px solid #ddd;
+}
+
+tbody tr:hover {
+    background: #f2f4f8;
+}
+
+
+
+.page>* :not(.lower_sec, .above_table, .fform) {
+    gap: 30px;
+}
+
+.large_txt {
+    font-size: 2rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.column {
+    flex-direction: column;
+}
+
+.row {
+    flex-direction: row;
+}
+
+.spacing {
+    justify-content: space-between;
+}
+
+.center {
+    align-items: center;
+}
+
+.width100 {
+    width: 100%;
+}
+
+.padding50 {
+    padding: 50px;
+}
+
+.margin25 {
+    margin: 25px;
+}
+
+
+
+.sec_button {
+    border-radius: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    padding: 12px;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sec_button:hover {
+    opacity: 0.7;
+}
+
+#search {
+    flex: 1;
+}
+
+.hidden {
+    display: none;
+}
+
+.upper_margin15 {
+    margin-top: 15px;
+}
+
+.border_radius8 {
+    border-radius: 8px;
+}
+
+.task_checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    /* display: block; */
+    margin: auto;
+}
+
+.center_children>* {
+    text-align: center;
+}
+
+.table tbody tr {
+    height: 50px;
+}
+
+.table_container {
+    height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.table tbody {
+    display: block;
+    height: 350px;
+    overflow-y: auto;
+}
+
+.table thead,
+.table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.task-progress{
+    display:flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.progress-track {
+    min-width: 150px;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #22c55e;
+    border-radius: inherit;
+}
