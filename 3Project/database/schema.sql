@@ -38,7 +38,7 @@ CREATE TABLE course_students (
     student_id INT NOT NULL,
 
     UNIQUE (course_id, student_id),
-    --a student can't be taking the course twice at the same time
+    -- a student can't be taking the course twice at the same time
 
     FOREIGN KEY (course_id)
         REFERENCES courses(course_id)
@@ -54,7 +54,7 @@ CREATE TABLE questions (
     question_id INT AUTO_INCREMENT PRIMARY KEY,
     course_id INT NOT NULL,
     question_text TEXT NOT NULL,
-    weight DECIMAL(5,2) NOT NULL DEFAULT 1,--ex: 0.25-0.50-1.00-5.00-50.00-100.00
+    weight DECIMAL(5,2) NOT NULL DEFAULT 1,-- ex: 0.25-0.50-1.00-5.00-50.00-100.00
 	
     CHECK (weight > 0),
     
@@ -62,7 +62,7 @@ CREATE TABLE questions (
     FOREIGN KEY (course_id)
         REFERENCES courses(course_id)
         ON DELETE CASCADE
-    --delete question of course if course is not used and can be deleted
+    -- delete question of course if course is not used and can be deleted
 );
 
 
@@ -75,8 +75,8 @@ CREATE TABLE choices (
     FOREIGN KEY (question_id)
         REFERENCES questions(question_id)
         ON DELETE CASCADE
-    --if a question is used by an exam (can't be deleted because of the restrict
-    --if a question isn't used, delete it and it's choices 
+    -- if a question is used by an exam (can't be deleted because of the restrict
+    -- if a question isn't used, delete it and it's choices 
 );
 
 
@@ -93,7 +93,7 @@ CREATE TABLE exams (
     FOREIGN KEY (course_id)
         REFERENCES courses(course_id)
         ON DELETE CASCADE
-    --if a course gets deleted, delete its questions
+    -- if a course gets deleted, delete its questions
 );
 
 
@@ -104,10 +104,10 @@ CREATE TABLE exam_questions (
     position INT NOT NULL,
 
     UNIQUE (exam_id, question_id),
-    --have to check that exam.course_id=question.course_id
+    -- have to check that exam.course_id=question.course_id
     UNIQUE (exam_id, position),
-    --one unique with all three may put multiple question on the same pos
-    --it also may put same question multiple times (different pos)
+    -- one unique with all three may put multiple question on the same pos
+    -- it also may put same question multiple times (different pos)
 
     FOREIGN KEY (exam_id)
         REFERENCES exams(exam_id)
