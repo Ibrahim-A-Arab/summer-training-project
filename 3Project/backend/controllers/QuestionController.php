@@ -22,6 +22,18 @@ class QuestionController
         ]);
     }
 
+    public function getByCourse(string $courseId): ViewModel
+    {
+        $courseId = (int) $courseId;
+
+        $questions = (new Question())->getByCourseId($courseId);
+
+        return new ViewModel('questions/index', [
+            'questions' => $questions,
+            'courseId' => $courseId
+        ]);
+    }
+
     public function getById(string $id): ViewModel{
         
         $questionModel = new Question();
@@ -59,7 +71,6 @@ class QuestionController
     {
         $courseId = (int) $courseId;
         $questionText = trim($_POST['question'] ?? '');
-        $weight = filter_input(INPUT_POST, 'weight', FILTER_VALIDATE_FLOAT);
         $courseModel = new Course();
 
         if (!$courseModel->exists($courseId)) {
@@ -75,24 +86,14 @@ class QuestionController
                 'error' => 'Question is required.',
                 'courseId' => $courseId,
                 'oldQuestion' => $questionText,
-                'oldWeight' => $_POST['weight'] ?? '1.00'
             ]);
         }
-        if ($weight === false || $weight === null || $weight <= 0) {
-            http_response_code(422);
 
-            return new ViewModel('questions/create', [
-                'error' => 'Weight must be greater than zero.',
-                'courseId' => $courseId,
-                'oldQuestion' => $questionText,
-                'oldWeight' => $_POST['weight'] ?? '1.00'
-            ]);
-        }
 
         $questionModel = new Question();
-        $questionModel->create($courseId, $questionText, $weight);
+        $questionModel->create($courseId, $questionText);
 
-        $this->redirectToQuestions();
+        $this->redirectToQuestions($courseId);
     }
 
     public function edit(string $id): ViewModel
@@ -123,7 +124,6 @@ class QuestionController
         }
 
         $questionText = trim($_POST['question'] ?? '');
-        $weight = filter_input(INPUT_POST, 'weight', FILTER_VALIDATE_FLOAT);
         $courseId = (int) $question['course_id'];
 
         if ($questionText === '') {
@@ -137,22 +137,14 @@ class QuestionController
             ]);
         }
 
-        if ($weight === false || $weight === null || $weight <= 0) {
-            http_response_code(422);
 
-            $question['question_text'] = $questionText;
-            $question['course_id'] = $courseId;
-            $question['weight'] = $_POST['weight'] ?? '';
+        $questionModel->update(
+            (int) $id,
+            $courseId,
+            $questionText
+        );
 
-            return new ViewModel('questions/edit', [
-                'question' => $question,
-                'error' => 'Weight must be greater than zero.'
-            ]);
-        }
-
-        $questionModel->update((int) $id, $courseId, $questionText, $weight);
-
-        $this->redirectToQuestions();
+        $this->redirectToQuestions($courseId);
     }
 
     public function delete(string $id): ViewModel
@@ -168,15 +160,17 @@ class QuestionController
             ]);
         }
 
+        $courseId = (int) $question['course_id'];
+
         $questionModel->delete((int) $id);
 
-        $this->redirectToQuestions();
+        $this->redirectToQuestions($courseId);
     }
 
-    private function redirectToQuestions(): never
+    private function redirectToQuestions($courseId): never
     {
         header(
-            'Location: /newSummerTraining/3Project/backend/api/questions',
+            "Location: /newSummerTraining/3Project/backend/api/courses/$courseId/questions",
             true,
             303
         );

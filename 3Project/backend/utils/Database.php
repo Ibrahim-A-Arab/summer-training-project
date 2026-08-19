@@ -47,6 +47,41 @@ class Database{
         return $statement->fetchAll();
     }
 
+    public function lastInsertId(): int
+    {
+        return (int) $this->connection->lastInsertId();
+    }
+
+    public function beginTransaction(): bool
+    {
+        return $this->connection->beginTransaction();
+    }
+
+    public function commit(): bool
+    {
+        return $this->connection->commit();
+    }
+
+    public function rollBack(): bool
+    {
+        return $this->connection->rollBack();
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->connection->inTransaction();
+    }
+
+    public function executeAffected(
+        string $sql,
+        array $params = []
+    ): int {
+        $statement = $this->connection->prepare($sql);
+        $statement->execute($params);
+
+        return $statement->rowCount();
+    }
+
     
 
 }

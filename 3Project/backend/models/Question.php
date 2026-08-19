@@ -24,7 +24,7 @@ class Question
     {
         $questions = $this->db->select(
             'SELECT * FROM questions
-            WHERE question_id = :id
+            WHERE id = :id
             LIMIT 1',
             ['id' => $id]
         );
@@ -32,37 +32,56 @@ class Question
         return $questions[0] ?? null;
     }
 
-    public function create(int $courseId, string $questionText, float $weight): bool
+    public function getByCourseId(int $courseId): array //all question bank of a course
     {
-        return $this->db->execute(
-            'INSERT INTO questions (course_id, question_text, weight)
-            VALUES (:course_id, :question_text, :weight)',
-            [
-                'course_id' => $courseId,
-                'question_text' => $questionText,
-                'weight' => $weight
-            ]
+        return $this->db->select(
+            'SELECT id, course_id, question_text
+            FROM questions
+            WHERE course_id = :course_id
+            ORDER BY id',
+            ['course_id' => $courseId]
         );
     }
+
+    public function exists(int $id): bool
+    {
+        return $this->getById($id) !== null;
+    }
+
+
+    public function create(
+    int $courseId,
+    string $questionText,
+): int {
+    $this->db->execute(
+        'INSERT INTO questions
+            (course_id, question_text)
+        VALUES
+            (:course_id, :question_text)',
+        [
+            'course_id' => $courseId,
+            'question_text' => $questionText
+        ]
+    );
+
+    return $this->db->lastInsertId();
+}
 
     public function update(
         int $id,
         int $courseId,
         string $questionText,
-        float $weight
     ): bool
     {
         return $this->db->execute(
             'UPDATE questions
             SET course_id = :course_id,
-                question_text = :question_text,
-                weight = :weight
-            WHERE question_id = :id',
+                question_text = :question_text
+            WHERE id = :id',
             [
                 'id' => $id,
                 'course_id' => $courseId,
-                'question_text' => $questionText,
-                'weight' => $weight
+                'question_text' => $questionText
             ]
         );
     }
@@ -71,7 +90,7 @@ class Question
     {
         return $this->db->execute(
             'DELETE FROM questions
-            WHERE question_id = :id',
+            WHERE id = :id',
             ['id' => $id]
         );
     }
