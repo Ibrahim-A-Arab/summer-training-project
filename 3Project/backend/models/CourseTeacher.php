@@ -35,10 +35,10 @@ class CourseTeacher
     ): bool {
         return $this->db->execute(
             'DELETE FROM course_teachers
-            WHERE id = :id
+            WHERE course_id = :course_id
             AND teacher_id = :teacher_id',
             [
-                'id' => $courseId,
+                'course_id' => $courseId,
                 'teacher_id' => $teacherId
             ]
         );
@@ -69,17 +69,17 @@ class CourseTeacher
     }
 
     public function isAssigned(
-        int $id,
+        int $courseId,
         int $teacherId
     ): bool {
         return $this->db->select(
             'SELECT id
             FROM course_teachers
-            WHERE id = :id
+            WHERE course_id = :course_id
             AND teacher_id = :teacher_id
             LIMIT 1',
             [
-                'id' => $id,
+                'course_id' => $courseId,
                 'teacher_id' => $teacherId
             ]
         ) !== [];// checks that the query returned 1 row atleast 

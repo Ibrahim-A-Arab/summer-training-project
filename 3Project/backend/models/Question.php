@@ -88,10 +88,26 @@ class Question
 
     public function delete(int $id): bool
     {
+        $questionModel = new Question();
+        $questionId = (int) $id;
+        
         return $this->db->execute(
             'DELETE FROM questions
             WHERE id = :id',
             ['id' => $id]
         );
+    }
+
+    public function isUsedInExam(int $id): bool
+    {
+        return $this->db->select(
+            'SELECT id
+            FROM exam_questions
+            WHERE question_id = :question_id
+            LIMIT 1',
+            [
+                'question_id' => $id
+            ]
+        ) !== [];
     }
 }

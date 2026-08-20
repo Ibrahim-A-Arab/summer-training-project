@@ -29,6 +29,18 @@ class CourseController
             ]);
         }
 
+        $courseModel = new Course();
+
+        if ($courseModel->getByCode($code) !== null) {////check if code already exists.
+            http_response_code(422);
+
+            return new ViewModel('courses/create', [
+                'error' => 'This course code already exists.',
+                'oldCode' => $code,
+                'oldName' => $name
+            ]);
+        }
+
         $courseId = (new Course())->create($code, $name);
 
         header(

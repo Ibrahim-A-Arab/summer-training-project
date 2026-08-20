@@ -65,17 +65,17 @@ class CourseStudent
     }
 
     public function isEnrolled( //check
-        int $id,
+        int $courseId,
         int $studentId
     ): bool {
         return $this->db->select(
             'SELECT id
             FROM course_students
-            WHERE id = :id
+            WHERE course_id = :course_id
             AND student_id = :student_id
             LIMIT 1',
             [
-                'id' => $id,
+                'course_id' => $courseId,
                 'student_id' => $studentId
             ]
         ) !== [];

@@ -26,6 +26,15 @@ class QuestionController
     {
         $courseId = (int) $courseId;
 
+        $courseModel = new Course(); //check if the course even exists.
+        $course = $courseModel->getById($courseId);
+
+        if ($course === null) {
+            http_response_code(404);
+
+            return new ViewModel('errors/404');
+        }
+
         $questions = (new Question())->getByCourseId($courseId);
 
         return new ViewModel('questions/index', [
@@ -150,7 +159,9 @@ class QuestionController
     public function delete(string $id): ViewModel
     {
         $questionModel = new Question();
-        $question = $questionModel->getById((int) $id);
+        $questionId = (int) $id;
+
+        $question = $questionModel->getById($questionId);
 
         if ($question === null) {
             http_response_code(404);
@@ -160,14 +171,23 @@ class QuestionController
             ]);
         }
 
+        if ($questionModel->isUsedInExam($questionId)) {
+            http_response_code(409);
+
+            return new ViewModel('questions/show', [
+                'question' => $question,
+                'error' => 'This question cannot be deleted because it is used by an exam.'
+            ]);
+        }
+
         $courseId = (int) $question['course_id'];
 
-        $questionModel->delete((int) $id);
+        $questionModel->delete($questionId);
 
         $this->redirectToQuestions($courseId);
     }
 
-    private function redirectToQuestions($courseId): never
+    private function redirectToQuestions(int $courseId): never
     {
         header(
             "Location: /newSummerTraining/3Project/backend/api/courses/$courseId/questions",

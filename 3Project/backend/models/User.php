@@ -83,8 +83,7 @@ class User{
     String $name, String $email, String $role):bool{
         return $this->db->execute(
             'UPDATE users
-            SET id= :id,
-                personal_id = :personal_id,
+            SET personal_id = :personal_id,
                 name = :name,
                 email = :email,
                 role = :role

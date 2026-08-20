@@ -45,7 +45,7 @@ class Router{
             // Convert "/api/questions/{id}" into a matching pattern.
             $pattern = preg_replace(
                 '#\{[^/]+\}#',
-                '([^/]+)',
+                '([1-9][0-9]*)',
                 $route['path']
             );
 

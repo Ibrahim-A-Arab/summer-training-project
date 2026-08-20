@@ -54,12 +54,12 @@ class StudentAnswer
     }
 
     public function create(
-    int $resultId,
-    int $questionId,
-    int $choiceId
-): ?int {
-    $affectedRows = $this->db->executeAffected(
-        'INSERT INTO student_answers
+        int $resultId,
+        int $questionId,
+        int $choiceId
+    ): ?int {
+        $affectedRows = $this->db->executeAffected(
+            'INSERT INTO student_answers
             (exam_results_id, question_id, choice_id)
 
         SELECT er.id, eq.question_id, c.id
@@ -76,19 +76,19 @@ class StudentAnswer
 
         WHERE er.id = :result_id
             AND er.submitted_at IS NULL',
-        [
-            'result_id' => $resultId,
-            'question_id' => $questionId,
-            'choice_id' => $choiceId
-        ]
-    );
+            [
+                'result_id' => $resultId,
+                'question_id' => $questionId,
+                'choice_id' => $choiceId
+            ]
+        );
 
-    if ($affectedRows !== 1) {
-        return null;
+        if ($affectedRows !== 1) {
+            return null;
+        }
+
+        return $this->db->lastInsertId();
     }
-
-    return $this->db->lastInsertId();
-}
 
     public function deleteForQuestion(
         int $resultId,
@@ -110,24 +110,41 @@ class StudentAnswer
         int $questionId
     ): bool {
         $rows = $this->db->select(
-            'SELECT COUNT(*) AS incorrect_count
-            FROM student_answers sa
-            JOIN choices c ON c.id = sa.choice_id
-            WHERE sa.exam_results_id = :result_id
-                AND sa.question_id = :question_id
-                AND c.is_correct = 0',
+            'SELECT
+            COUNT(DISTINCT CASE
+                WHEN c.is_correct = 1 THEN sa.choice_id
+            END) AS selected_correct,
+
+            COUNT(DISTINCT CASE
+                WHEN c.is_correct = 0 THEN sa.choice_id
+            END) AS selected_incorrect,
+
+            (
+                SELECT COUNT(*)
+                FROM choices
+                WHERE question_id = :total_question_id
+                    AND is_correct = 1
+            ) AS total_correct
+
+        FROM student_answers sa
+
+        JOIN choices c
+            ON c.id = sa.choice_id
+
+        WHERE sa.exam_results_id = :result_id
+            AND sa.question_id = :answer_question_id',
             [
                 'result_id' => $resultId,
-                'question_id' => $questionId
+                'answer_question_id' => $questionId,
+                'total_question_id' => $questionId
             ]
         );
 
-        $answers = $this->getByResultAndQuestion(
-            $resultId,
-            $questionId
-        );
+        $result = $rows[0];
 
-        return $answers !== []
-            && (int) $rows[0]['incorrect_count'] === 0;
+        return (int) $result['total_correct'] > 0
+            && (int) $result['selected_incorrect'] === 0
+            && (int) $result['selected_correct']//////true only if all selected are correct
+            === (int) $result['total_correct'];///////true only if all correct are selected 
     }
 }
