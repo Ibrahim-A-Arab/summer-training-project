@@ -54,6 +54,7 @@ CREATE TABLE questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_id INT NOT NULL,
     question_text TEXT NOT NULL,
+    question_type ENUM('MCQ','TrueOrFalse') NOT NULL DEFAULT 'MCQ',
 	
     FOREIGN KEY (course_id)
         REFERENCES courses(id)

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 use App\Routes\Router;
 
-// Course routes
+Router::get(
+    '/api/courses',
+    ['CourseController', 'index']
+);
 
 Router::get(
     '/api/courses/create',
@@ -15,8 +18,6 @@ Router::post(
     '/api/courses',
     ['CourseController', 'store']
 );
-
-// Course question routes
 
 Router::get(
     '/api/courses/{courseId}/questions',
@@ -31,13 +32,6 @@ Router::get(
 Router::post(
     '/api/courses/{courseId}/questions',
     ['QuestionController', 'store']
-);
-
-// Question routes
-
-Router::get(
-    '/api/questions',
-    ['QuestionController', 'getAll']
 );
 
 Router::get(

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,17 +8,14 @@
 </head>
 
 <body>
-    
+
     <h1>Questions</h1>
 
-    <a href="/newSummerTraining/3Project/backend/api/courses/create">
-        Add course
-    </a>
 
     <?php if (isset($courseId)): ?>
-    <a href="/newSummerTraining/3Project/backend/api/courses/<?= (int) $courseId ?>/questions/create">
-        Add question to this course
-    </a>
+        <a href="/newSummerTraining/3Project/backend/api/courses/<?= (int) $courseId ?>/questions/create">
+            Add question to this course
+        </a>
     <?php endif; ?>
 
     <?php if (empty($questions)): ?>
@@ -43,14 +39,17 @@
                     <form
                         method="POST"
                         action="/newSummerTraining/3Project/backend/api/questions/<?= (int) $question['id'] ?>/delete"
-                        style="display: inline"
-                    >
+                        style="display: inline">
                         <button type="submit">Delete</button>
                     </form>
                 </li>
             <?php endforeach; ?>
         </ul>
     <?php endif; ?>
+
+    <a href="/newSummerTraining/3Project/backend/api/courses">
+        Back to courses
+    </a>
 </body>
 
 </html>

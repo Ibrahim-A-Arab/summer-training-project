@@ -15,7 +15,8 @@ class Question
         $this->db = Database::getInstance();
     }
 
-    public function getAll(): array{
+    public function getAll(): array
+    {
         return $this->db->select(
             'SELECT * FROM questions'
         );
@@ -50,29 +51,35 @@ class Question
 
 
     public function create(
-    int $courseId,
-    string $questionText,
-): int {
-    $this->db->execute(
-        'INSERT INTO questions
-            (course_id, question_text)
-        VALUES
-            (:course_id, :question_text)',
-        [
-            'course_id' => $courseId,
-            'question_text' => $questionText
-        ]
-    );
+        int $courseId,
+        string $questionText,
+        string $questionType
+    ): int {
+        $this->db->execute(
+            'INSERT INTO questions (
+            course_id,
+            question_text,
+            question_type
+        ) VALUES (
+            :course_id,
+            :question_text,
+            :question_type
+        )',
+            [
+                'course_id' => $courseId,
+                'question_text' => $questionText,
+                'question_type' => $questionType
+            ]
+        );
 
-    return $this->db->lastInsertId();
-}
+        return $this->db->lastInsertId();
+    }
 
     public function update(
         int $id,
         int $courseId,
         string $questionText,
-    ): bool
-    {
+    ): bool {
         return $this->db->execute(
             'UPDATE questions
             SET course_id = :course_id,
@@ -90,7 +97,7 @@ class Question
     {
         $questionModel = new Question();
         $questionId = (int) $id;
-        
+
         return $this->db->execute(
             'DELETE FROM questions
             WHERE id = :id',

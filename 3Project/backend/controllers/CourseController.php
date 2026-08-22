@@ -9,6 +9,15 @@ use App\Utils\ViewModel;
 
 class CourseController
 {
+    public function index(): ViewModel
+    {
+        $courses = (new Course())->getAll();
+
+        return new ViewModel('courses/index', [
+            'courses' => $courses
+        ]);
+    }
+
     public function create(): ViewModel
     {
         return new ViewModel('courses/create');
@@ -31,7 +40,7 @@ class CourseController
 
         $courseModel = new Course();
 
-        if ($courseModel->getByCode($code) !== null) {////check if code already exists.
+        if ($courseModel->getByCode($code) !== null) { ////check if code already exists.
             http_response_code(422);
 
             return new ViewModel('courses/create', [
