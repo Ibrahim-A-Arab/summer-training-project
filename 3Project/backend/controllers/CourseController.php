@@ -53,7 +53,7 @@ class CourseController
         $courseId = (new Course())->create($code, $name);
 
         header(
-            "Location: /newSummerTraining/3Project/backend/api/courses/$courseId/questions",
+            "Location: /newSummerTraining/3Project/backend/api/courses",
             true,
             303
         );

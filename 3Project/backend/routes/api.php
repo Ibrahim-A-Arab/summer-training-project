@@ -5,6 +5,37 @@ declare(strict_types=1);
 use App\Routes\Router;
 
 Router::get(
+    '/login',
+    ['AuthController', 'showLogin']
+);
+
+Router::post(
+    '/login',
+    ['AuthController', 'login']
+);
+
+Router::post(
+    '/logout',
+    ['AuthController', 'logout']
+);
+
+
+Router::get(
+    '/signup',
+    ['AuthController', 'showSignup']
+);
+
+Router::post(
+    '/signup',
+    ['AuthController', 'signup']
+);
+
+Router::get(
+    '/dashboard',
+    ['DashboardController', 'index']
+);
+
+Router::get(
     '/api/courses',
     ['CourseController', 'index']
 );
