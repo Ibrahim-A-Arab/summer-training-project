@@ -55,11 +55,23 @@ class ExamQuestion
         );
     }
 
+    public function removeAllByExam(int $examId): bool
+    {
+        return $this->db->execute(
+            'DELETE FROM exam_questions
+            WHERE exam_id = :exam_id',
+            ['exam_id' => $examId]
+        );
+    }
+
     public function getQuestionsByExam(int $examId): array
     {
         return $this->db->select(
-            'SELECT q.id, q.course_id,
-                    q.question_text, eq.weight,
+            'SELECT q.id,
+                    q.course_id,
+                    q.question_text,
+                    q.question_type,
+                    eq.weight,
                     eq.position
             FROM exam_questions eq
             JOIN questions q

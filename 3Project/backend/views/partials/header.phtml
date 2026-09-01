@@ -49,29 +49,28 @@ $showNavigation ??= isset($_SESSION['user_id']);
             ?>
                 <div class="navbar-nav">
                     <a
+                        class="nav-link <?= $activePage === 'home'
+                            ? 'active'
+                            : '' ?>"
+                        href="/newSummerTraining/3Project/backend/home">
+                        Home
+                    </a>
+
+                    <a
+                        class="nav-link <?= $activePage === 'dashboard'
+                            ? 'active'
+                            : '' ?>"
+                        href="/newSummerTraining/3Project/backend/dashboard">
+                        Dashboard
+                    </a>
+
+                    <a
                         class="nav-link <?= $activePage === 'courses'
-                                            ? 'active'
-                                            : '' ?>"
+                            ? 'active'
+                            : '' ?>"
                         href="/newSummerTraining/3Project/backend/api/courses">
-                        Courses
+                        My Courses
                     </a>
-
-                    <a
-                        class="nav-link <?= $activePage === 'exams'
-                                            ? 'active'
-                                            : '' ?>"
-                        href="#">
-                        Exams
-                    </a>
-
-                    <a
-                        class="nav-link <?= $activePage === 'users'
-                                            ? 'active'
-                                            : '' ?>"
-                        href="#">
-                        Users
-                    </a>
-
 
                     <form
                         method="POST"

@@ -1,0 +1,521 @@
+<?php
+
+use App\Models\Course;
+
+$course ??= null;
+$error ??= null;
+$questions ??= [];
+$exam ??= null;
+$selectedQuestions ??= [];
+
+$oldName ??= '';
+$oldStartTime ??= '';
+$oldEndTime ??= '';
+$oldShuffle ??= false;
+
+$isEditing = $exam !== null;
+
+$pageTitle = $isEditing ? 'Edit Exam' : 'Create Exam';
+$activePage = 'exams';
+
+$examId = is_array($exam)
+    ? (int) ($exam['id'] ?? 0)
+    : 0;
+
+$isEditing = $examId > 0;
+
+$formAction = $isEditing
+    ? '/newSummerTraining/3Project/backend/teacher/exams/'
+        . (int) $examId
+        . '/update'
+    : '/newSummerTraining/3Project/backend/teacher/courses/'
+        . (int) ($course['id'] ?? 0)
+        . '/exams';
+
+$cancelUrl = $isEditing
+    ? '/newSummerTraining/3Project/backend/teacher/exams/'
+        . (int) $examId
+    : '/newSummerTraining/3Project/backend/teacher/courses/'
+        . (int) ($course['id'] ?? 0);
+
+require __DIR__ . '/../../partials/header.phtml';
+
+?>
+
+<main class="container py-5">
+
+    <?php if ($course === null): ?>
+
+        <div class="alert alert-danger" role="alert">
+            Course not found.
+        </div>
+
+    <?php else: ?>
+
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+
+                <!-- Page heading -->
+                <div
+                    class="d-flex flex-column flex-md-row
+                            justify-content-between
+                            align-items-md-start gap-3 mb-4"
+                >
+                    <div>
+                        <span class="badge text-bg-primary mb-2">
+                            <?= htmlspecialchars(
+                                $course['course_code'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </span>
+
+                        <h1 class="h2 mb-1">
+                            <?= $isEditing ? 'Edit Exam' : 'Create Exam' ?>
+                        </h1>
+
+                        <p class="text-body-secondary mb-0">
+                            <?= $isEditing ? 'Update the exam for' : 'Create a new exam for' ?>
+                            <?= htmlspecialchars(
+                                $course['course_name'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>.
+                        </p>
+                    </div>
+
+                    <a
+                        href="/newSummerTraining/3Project/backend/teacher/courses/<?= (int) $course['id'] ?>"
+                        class="btn btn-outline-secondary"
+                    >
+                        Back to course
+                    </a>
+                </div>
+
+                <!-- Validation error -->
+                <?php if ($error !== null): ?>
+                    <div class="alert alert-danger" role="alert">
+                        <?= htmlspecialchars(
+                            $error,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Exam form -->
+                <form
+                    method="POST"
+                    action="<?= htmlspecialchars(
+                        $formAction,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>"
+                >
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h2 class="h5 mb-0">Exam information</h2>
+                        </div>
+
+                        <div class="card-body p-4">
+
+                            <!-- Exam name -->
+                            <div class="mb-4">
+                                <label
+                                    for="exam_name"
+                                    class="form-label fw-semibold"
+                                >
+                                    Exam name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="exam_name"
+                                    name="exam_name"
+                                    class="form-control"
+                                    placeholder="Example: Midterm Exam"
+                                    value="<?= htmlspecialchars(
+                                        $oldName,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Course -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    Course
+                                </label>
+
+                                <div class="form-control bg-body-tertiary">
+                                    <?= htmlspecialchars(
+                                        $course['course_code']
+                                            . ' — '
+                                            . $course['course_name'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </div>
+
+                                <div class="form-text">
+                                    The exam belongs to this course.
+                                </div>
+                            </div>
+
+                            <!-- Start and end -->
+                            <div class="row g-3">
+
+                                <div class="col-12 col-md-6">
+                                    <label
+                                        for="start_time"
+                                        class="form-label fw-semibold"
+                                    >
+                                        Start time
+                                    </label>
+
+                                    <input
+                                        type="datetime-local"
+                                        id="start_time"
+                                        name="start_time"
+                                        class="form-control"
+                                        value="<?= htmlspecialchars(
+                                            $oldStartTime,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label
+                                        for="end_time"
+                                        class="form-label fw-semibold"
+                                    >
+                                        End time
+                                    </label>
+
+                                    <input
+                                        type="datetime-local"
+                                        id="end_time"
+                                        name="end_time"
+                                        class="form-control"
+                                        value="<?= htmlspecialchars(
+                                            $oldEndTime,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exam settings -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h2 class="h5 mb-0">Exam settings</h2>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <div class="form-check form-switch">
+                                <input
+                                    type="checkbox"
+                                    id="shuffle_questions"
+                                    name="shuffle_questions"
+                                    value="1"
+                                    class="form-check-input"
+                                    <?= $oldShuffle ? 'checked' : '' ?>
+                                >
+
+                                <label
+                                    for="shuffle_questions"
+                                    class="form-check-label fw-semibold"
+                                >
+                                    Shuffle questions
+                                </label>
+
+                                <div class="form-text">
+                                    Each student may receive the questions
+                                    in a different order.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected questions -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h2 class="h5 mb-0">Exam questions</h2>
+
+                                <span class="badge text-bg-primary">
+                                    Total marks:
+                                    <span id="total-marks">0</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <div
+                                id="selected-questions"
+                                class="vstack gap-3 overflow-auto"
+                                style="max-height: 420px;"
+                            >
+                                <div
+                                    id="no-selected-questions"
+                                    class="alert alert-info mb-0"
+                                >
+                                    No questions have been added to this exam.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add question -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h2 class="h5 mb-0">Add questions</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <?php if ($questions === []): ?>
+                                <div class="alert alert-warning mb-0">
+                                    This course does not have any questions.
+                                </div>
+                            <?php else: ?>
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <label
+                                            for="question-selector"
+                                            class="form-label fw-semibold"
+                                        >
+                                            Course question
+                                        </label>
+
+                                        <select
+                                            id="question-selector"
+                                            class="form-select"
+                                        >
+                                            <option value="">
+                                                Select a question
+                                            </option>
+
+                                            <?php foreach ($questions as $question): ?>
+                                                <option
+                                                    value="<?= (int) $question['id'] ?>"
+                                                    data-text="<?= htmlspecialchars(
+                                                        $question['question_text'],
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ) ?>"
+                                                    data-type="<?= htmlspecialchars(
+                                                        $question['question_type'],
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ) ?>"
+                                                >
+                                                    <?= htmlspecialchars(
+                                                        $question['question_text'],
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-auto align-self-end">
+                                        <button
+                                            type="button"
+                                            id="add-question"
+                                            class="btn btn-primary"
+                                        >
+                                            + Add
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a
+                            href="<?= htmlspecialchars(
+                                $cancelUrl,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                            class="btn btn-outline-secondary"
+                        >
+                            Cancel
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            <?= $isEditing ? 'Save changes' : 'Create exam' ?>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+    <?php endif; ?>
+
+</main>
+
+<script>
+    const questionSelector =
+        document.getElementById('question-selector');
+
+    const addQuestionButton =
+        document.getElementById('add-question');
+
+    const selectedQuestions =
+        document.getElementById('selected-questions');
+
+    const emptyMessage =
+        document.getElementById('no-selected-questions');
+
+    const totalMarks =
+        document.getElementById('total-marks');
+
+    const addedQuestionIds = new Set();
+
+    const initialSelectedQuestions = <?= json_encode(
+        array_values($selectedQuestions),
+        JSON_HEX_TAG
+        | JSON_HEX_AMP
+        | JSON_HEX_APOS
+        | JSON_HEX_QUOT
+    ) ?>;
+
+    function updateTotalMarks() {
+        let total = 0;
+
+        selectedQuestions
+            .querySelectorAll('.question-weight')
+            .forEach(function (input) {
+                total += Number(input.value) || 0;
+            });
+
+        totalMarks.textContent = total.toFixed(2);
+    }
+
+    function addSelectedQuestion(
+        questionId,
+        text,
+        type,
+        weight = ''
+    ) {
+        questionId = String(questionId);
+
+        if (questionId === '' || addedQuestionIds.has(questionId)) {
+            return;
+        }
+
+        addedQuestionIds.add(questionId);
+        emptyMessage.classList.add('d-none');
+
+        const question = document.createElement('div');
+        question.className = 'border rounded p-3 selected-question';
+        question.dataset.questionId = questionId;
+
+        const row = document.createElement('div');
+        row.className = 'row align-items-center g-3';
+
+        const informationColumn = document.createElement('div');
+        informationColumn.className = 'col';
+
+        const typeBadge = document.createElement('span');
+        typeBadge.className = 'badge text-bg-secondary mb-2';
+        typeBadge.textContent = type === 'TrueOrFalse'
+            ? 'True / False'
+            : 'Multiple Choice';
+
+        const questionText = document.createElement('p');
+        questionText.className = 'fw-semibold mb-0';
+        questionText.textContent = text;
+
+        informationColumn.append(typeBadge, questionText);
+
+        const weightColumn = document.createElement('div');
+        weightColumn.className = 'col-12 col-md-3';
+
+        const weightInput = document.createElement('input');
+        weightInput.type = 'number';
+        weightInput.name = `questions[${questionId}][weight]`;
+        weightInput.className = 'form-control question-weight';
+        weightInput.placeholder = 'Marks';
+        weightInput.min = '0.5';
+        weightInput.max = '100';
+        weightInput.step = '0.5';
+        weightInput.value = weight;
+        weightInput.required = true;
+        weightInput.addEventListener('input', updateTotalMarks);
+
+        weightColumn.appendChild(weightInput);
+
+        const deleteColumn = document.createElement('div');
+        deleteColumn.className = 'col-12 col-md-auto';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'btn btn-outline-danger';
+        deleteButton.textContent = 'Delete';
+
+        deleteButton.addEventListener('click', function () {
+            addedQuestionIds.delete(questionId);
+            question.remove();
+
+            if (addedQuestionIds.size === 0) {
+                emptyMessage.classList.remove('d-none');
+            }
+
+            updateTotalMarks();
+        });
+
+        deleteColumn.appendChild(deleteButton);
+
+        row.append(
+            informationColumn,
+            weightColumn,
+            deleteColumn
+        );
+
+        question.appendChild(row);
+        selectedQuestions.appendChild(question);
+        updateTotalMarks();
+    }
+
+    addQuestionButton?.addEventListener('click', function () {
+        const option = questionSelector.options[
+            questionSelector.selectedIndex
+        ];
+
+        addSelectedQuestion(
+            option.value,
+            option.dataset.text,
+            option.dataset.type
+        );
+
+        questionSelector.value = '';
+    });
+
+    initialSelectedQuestions.forEach(function (question) {
+        addSelectedQuestion(
+            question.id,
+            question.question_text,
+            question.question_type,
+            question.weight
+        );
+    });
+</script>

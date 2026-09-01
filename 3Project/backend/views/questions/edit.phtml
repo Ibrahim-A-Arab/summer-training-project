@@ -1,172 +1,450 @@
 <?php
 
-/** @var array<string, mixed>|null $question */
-$question ??= null;
+$error ??= null;
 $choices ??= [];
+$questionType ??= $question['question_type'] ?? 'MCQ';
+$correctAnswer ??= null;
+
+$pageTitle = 'Edit Question';
+$activePage = 'courses';
+
+if (isset($question) && is_array($question)) {
+    $courseId = (int) $question['course_id'];
+
+    // Find the currently correct True/False answer.
+    if (
+        $questionType === 'TrueOrFalse'
+        && $correctAnswer === null
+    ) {
+        foreach ($choices as $choice) {
+            $choiceText = strtolower(
+                (string) (
+                    $choice['text']
+                    ?? $choice['choice_text']
+                    ?? ''
+                )
+            );
+
+            $isCorrect =
+                !empty($choice['correct'])
+                || !empty($choice['is_correct']);
+
+            if ($isCorrect && in_array(
+                $choiceText,
+                ['true', 'false'],
+                true
+            )) {
+                $correctAnswer = $choiceText;
+                break;
+            }
+        }
+    }
+}
+
+require __DIR__ . '/../partials/header.phtml';
+
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
+<main class="container py-5">
 
-<head>
-    <meta charset="UTF-8">
-    <title>Edit question</title>
-</head>
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
 
-<body>
-    <?php if ($question === null): ?>
-        <h1>Question not found</h1>
-    <?php else: ?>
-        <h1>Edit question</h1>
+            <?php if (!isset($question) || !is_array($question)): ?>
 
-        <?php if (!empty($error)): ?>
-            <p style="color: red">
-                <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
-            </p>
-        <?php endif; ?>
-
-        <form
-            method="POST"
-            action="/newSummerTraining/3Project/backend/api/questions/<?= (int) $question['id'] ?>/update">
-            <label for="question">Question</label>
-            <input
-                id="question"
-                name="question"
-                type="text"
-                value="<?= htmlspecialchars(
-                            $question['question_text'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>"
-                required>
-
-            <fieldset>
-                <legend>Choices</legend>
-
-                <div id="choices">
-                    <?php foreach ($choices as $index => $choice): ?>
-                        <?php
-                        $choiceText =
-                            $choice['text']
-                            ?? $choice['choice_text']
-                            ?? '';
-
-                        $isCorrect =
-                            isset($choice['correct'])
-                            || !empty($choice['is_correct']);
-                        ?>
-
-                        <div class="choice-row">
-                            <input
-                                name="choices[<?= $index ?>][text]"
-                                type="text"
-                                placeholder="Choice <?= $index + 1 ?>"
-                                value="<?= htmlspecialchars(
-                                            (string) $choiceText,
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        ) ?>"
-                                required>
-
-                            <label>
-                                <input
-                                    name="choices[<?= $index ?>][correct]"
-                                    type="checkbox"
-                                    value="1"
-                                    <?= $isCorrect ? 'checked' : '' ?>>
-                                Correct
-                            </label>
-
-                            <button
-                                type="button"
-                                class="remove-choice">
-                                −
-                            </button>
-                        </div>
-                    <?php endforeach; ?>
+                <div class="alert alert-danger">
+                    Question not found.
                 </div>
 
-                <button type="button" id="add-choice">
-                    + Add choice
-                </button>
-            </fieldset>
+            <?php else: ?>
 
+                <div class="d-flex justify-content-between align-items-center mb-4">
 
-            <button type="submit">Update</button>
-        </form>
-    <?php endif; ?>
+                    <div>
+                        <h1 class="h2 mb-1">Edit Question</h1>
 
-    <?php if ($question !== null): ?>
-    <script>
-        const choicesContainer = document.getElementById('choices');
-        const addChoiceButton = document.getElementById('add-choice');
+                        <p class="text-body-secondary mb-0">
+                            Update the question and its answers.
+                        </p>
+                    </div>
 
-        let nextChoiceIndex = <?= count($choices) ?>;
+                    <a
+                        href="/newSummerTraining/3Project/backend/api/courses/<?= $courseId ?>/questions"
+                        class="btn btn-outline-secondary"
+                    >
+                        Back
+                    </a>
 
-        addChoiceButton.addEventListener('click', function() {
-            const index = nextChoiceIndex++;
+                </div>
 
-            const row = document.createElement('div');
-            row.className = 'choice-row';
+                <?php if ($error !== null): ?>
+                    <div class="alert alert-danger" role="alert">
+                        <?= htmlspecialchars(
+                            $error,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>
+                    </div>
+                <?php endif; ?>
 
-            row.innerHTML = `
-            <input
-                name="choices[${index}][text]"
-                type="text"
-                placeholder="Choice"
-                required
-            >
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
 
-            <label>
+                        <form
+                            method="POST"
+                            action="/newSummerTraining/3Project/backend/api/questions/<?= (int) $question['id'] ?>/update"
+                        >
+
+                            <!-- Question text -->
+                            <div class="mb-4">
+                                <label
+                                    for="question"
+                                    class="form-label fw-semibold"
+                                >
+                                    Question
+                                </label>
+
+                                <textarea
+                                    id="question"
+                                    name="question"
+                                    class="form-control"
+                                    rows="3"
+                                    placeholder="Enter the question..."
+                                    required
+                                ><?= htmlspecialchars(
+                                    (string) $question['question_text'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?></textarea>
+                            </div>
+
+                            <!-- Question type -->
+                            <div class="mb-4">
+                                <label
+                                    for="question_type"
+                                    class="form-label fw-semibold"
+                                >
+                                    Question type
+                                </label>
+
+                                <select
+                                    id="question_type"
+                                    name="question_type"
+                                    class="form-select"
+                                    required
+                                >
+                                    <option
+                                        value="MCQ"
+                                        <?= $questionType === 'MCQ'
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        Multiple Choice
+                                    </option>
+
+                                    <option
+                                        value="TrueOrFalse"
+                                        <?= $questionType === 'TrueOrFalse'
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        True / False
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Multiple-choice editor -->
+                            <div id="multiple-choice-editor">
+                                <div class="border rounded p-3 mb-4">
+
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                        <div>
+                                            <h2 class="h5 mb-1">
+                                                Choices
+                                            </h2>
+
+                                            <p class="small text-body-secondary mb-0">
+                                                Select every correct answer.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            id="add-choice"
+                                            class="btn btn-outline-primary btn-sm"
+                                        >
+                                            + Add choice
+                                        </button>
+
+                                    </div>
+
+                                    <div id="choices" class="vstack gap-3">
+
+                                        <?php foreach ($choices as $index => $choice): ?>
+                                            <?php
+                                            $choiceText =
+                                                $choice['text']
+                                                ?? $choice['choice_text']
+                                                ?? '';
+
+                                            $isCorrect =
+                                                !empty($choice['correct'])
+                                                || !empty($choice['is_correct']);
+                                            ?>
+
+                                            <div class="choice-row">
+                                                <div class="input-group">
+
+                                                    <span class="input-group-text choice-number">
+                                                        <?= $index + 1 ?>
+                                                    </span>
+
+                                                    <input
+                                                        name="choices[<?= $index ?>][text]"
+                                                        type="text"
+                                                        class="form-control"
+                                                        placeholder="Choice <?= $index + 1 ?>"
+                                                        value="<?= htmlspecialchars(
+                                                            (string) $choiceText,
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        ) ?>"
+                                                        required
+                                                    >
+
+                                                    <span class="input-group-text">
+                                                        <input
+                                                            name="choices[<?= $index ?>][correct]"
+                                                            type="checkbox"
+                                                            value="1"
+                                                            class="form-check-input mt-0 me-2"
+                                                            aria-label="Mark choice as correct"
+                                                            <?= $isCorrect
+                                                                ? 'checked'
+                                                                : '' ?>
+                                                        >
+
+                                                        Correct
+                                                    </span>
+
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-outline-danger remove-choice"
+                                                    >
+                                                        Remove
+                                                    </button>
+
+                                                </div>
+                                            </div>
+
+                                        <?php endforeach; ?>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- True/False editor -->
+                            <div id="true-false-editor" hidden>
+                                <div class="border rounded p-3 mb-4">
+
+                                    <h2 class="h5 mb-3">
+                                        Correct answer
+                                    </h2>
+
+                                    <div class="vstack gap-2">
+
+                                        <label class="border rounded p-3">
+                                            <input
+                                                type="radio"
+                                                name="correct_answer"
+                                                value="true"
+                                                class="form-check-input me-2"
+                                                <?= $correctAnswer === 'true'
+                                                    ? 'checked'
+                                                    : '' ?>
+                                            >
+
+                                            True
+                                        </label>
+
+                                        <label class="border rounded p-3">
+                                            <input
+                                                type="radio"
+                                                name="correct_answer"
+                                                value="false"
+                                                class="form-check-input me-2"
+                                                <?= $correctAnswer === 'false'
+                                                    ? 'checked'
+                                                    : '' ?>
+                                            >
+
+                                            False
+                                        </label>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex justify-content-end gap-2">
+
+                                <a
+                                    href="/newSummerTraining/3Project/backend/api/courses/<?= $courseId ?>/questions"
+                                    class="btn btn-outline-secondary"
+                                >
+                                    Cancel
+                                </a>
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                >
+                                    Update question
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            <?php endif; ?>
+
+        </div>
+    </div>
+
+</main>
+
+<?php if (isset($question) && is_array($question)): ?>
+
+<script>
+    const questionType =
+        document.getElementById('question_type');
+
+    const multipleChoiceEditor =
+        document.getElementById('multiple-choice-editor');
+
+    const trueFalseEditor =
+        document.getElementById('true-false-editor');
+
+    const choicesContainer =
+        document.getElementById('choices');
+
+    const addChoiceButton =
+        document.getElementById('add-choice');
+
+    let nextChoiceIndex = <?= count($choices) ?>;
+
+    function updateQuestionEditor() {
+        const isTrueFalse =
+            questionType.value === 'TrueOrFalse';
+
+        multipleChoiceEditor.hidden = isTrueFalse;
+        trueFalseEditor.hidden = !isTrueFalse;
+
+        multipleChoiceEditor
+            .querySelectorAll('input, button')
+            .forEach(function (element) {
+                element.disabled = isTrueFalse;
+            });
+
+        trueFalseEditor
+            .querySelectorAll('input')
+            .forEach(function (input) {
+                input.disabled = !isTrueFalse;
+                input.required = isTrueFalse;
+            });
+    }
+
+    function updateChoiceLabels() {
+        const rows =
+            choicesContainer.querySelectorAll('.choice-row');
+
+        rows.forEach(function (row, index) {
+            row.querySelector('.choice-number').textContent =
+                index + 1;
+
+            row.querySelector('input[type="text"]').placeholder =
+                `Choice ${index + 1}`;
+        });
+    }
+
+    questionType.addEventListener(
+        'change',
+        updateQuestionEditor
+    );
+
+    addChoiceButton.addEventListener('click', function () {
+        const index = nextChoiceIndex++;
+
+        const row = document.createElement('div');
+        row.className = 'choice-row';
+
+        row.innerHTML = `
+            <div class="input-group">
+
+                <span class="input-group-text choice-number"></span>
+
                 <input
-                    name="choices[${index}][correct]"
-                    type="checkbox"
-                    value="1"
+                    name="choices[${index}][text]"
+                    type="text"
+                    class="form-control"
+                    placeholder="Choice"
+                    required
                 >
-                Correct
-            </label>
 
-            <button type="button" class="remove-choice">
-                −
-            </button>
+                <span class="input-group-text">
+                    <input
+                        name="choices[${index}][correct]"
+                        type="checkbox"
+                        value="1"
+                        class="form-check-input mt-0 me-2"
+                        aria-label="Mark choice as correct"
+                    >
+
+                    Correct
+                </span>
+
+                <button
+                    type="button"
+                    class="btn btn-outline-danger remove-choice"
+                >
+                    Remove
+                </button>
+
+            </div>
         `;
 
-            choicesContainer.appendChild(row);
-            updateChoiceLabels();
-        });
+        choicesContainer.appendChild(row);
+        updateChoiceLabels();
+    });
 
-        choicesContainer.addEventListener('click', function(event) {
-            if (!event.target.classList.contains('remove-choice')) {
-                return;
-            }
-
-            const choiceRows =
-                choicesContainer.querySelectorAll('.choice-row');
-
-            if (choiceRows.length <= 2) {
-                alert('A question must have at least two choices.');
-                return;
-            }
-
-            event.target.closest('.choice-row').remove();
-
-            updateChoiceLabels();
-        });
-
-        function updateChoiceLabels() {
-            const rows =
-                choicesContainer.querySelectorAll('.choice-row');
-
-            rows.forEach(function(row, index) {
-                const input = row.querySelector(
-                    'input[type="text"]'
-                );
-
-                input.placeholder = `Choice ${index + 1}`;
-            });
+    choicesContainer.addEventListener('click', function (event) {
+        if (!event.target.classList.contains('remove-choice')) {
+            return;
         }
-    </script>
-    <?php endif; ?>
-</body>
 
-</html>
+        const rows =
+            choicesContainer.querySelectorAll('.choice-row');
+
+        if (rows.length <= 2) {
+            alert(
+                'A question must have at least two choices.'
+            );
+
+            return;
+        }
+
+        event.target.closest('.choice-row').remove();
+        updateChoiceLabels();
+    });
+
+    updateChoiceLabels();
+    updateQuestionEditor();
+</script>
+
+<?php endif; ?>
+
+<?php require __DIR__ . '/../partials/footer.phtml'; ?>

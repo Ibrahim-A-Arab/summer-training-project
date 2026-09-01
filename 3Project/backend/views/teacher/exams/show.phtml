@@ -1,0 +1,421 @@
+<?php
+
+$exam ??= null;
+$course ??= null;
+$questions ??= [];
+$totalMarks ??= 0;
+$attempt ??= null;
+$hasAnyAttempt ??= false;
+$studentResults ??= [];
+$showReview ??= false;
+$reviewQuestions ??= [];
+
+$pageTitle = $exam['exam_name'] ?? 'Exam';
+$activePage = 'exams';
+
+require __DIR__ . '/../../partials/header.phtml';
+
+?>
+
+<main class="container py-5">
+    <?php if ($exam === null || $course === null): ?>
+        <div class="alert alert-danger" role="alert">
+            Exam not found.
+        </div>
+    <?php else: ?>
+        <?php
+        $now = new DateTimeImmutable();
+        $start = new DateTimeImmutable($exam['start_time']);
+        $end = new DateTimeImmutable($exam['end_time']);
+
+        if ($now < $start) {
+            $status = 'Upcoming';
+            $statusClass = 'text-bg-warning';
+        } elseif ($now <= $end) {
+            $status = 'Available';
+            $statusClass = 'text-bg-success';
+        } else {
+            $status = 'Ended';
+            $statusClass = 'text-bg-secondary';
+        }
+        ?>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-4">
+            <div>
+                <span class="badge text-bg-primary mb-2">
+                    <?= htmlspecialchars(
+                        $course['course_code'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>
+                </span>
+
+                <h1 class="h2 mb-1">
+                    <?= htmlspecialchars(
+                        $exam['exam_name'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>
+                </h1>
+
+                <p class="text-body-secondary mb-0">
+                    <?= htmlspecialchars(
+                        $course['course_name'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>
+                </p>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <?php if ($now < $start && !$hasAnyAttempt): ?>
+                    <a
+                        href="/newSummerTraining/3Project/backend/teacher/exams/<?= (int) $exam['id'] ?>/edit"
+                        class="btn btn-outline-primary"
+                    >
+                        Edit exam
+                    </a>
+
+                    <form
+                        method="POST"
+                        action="/newSummerTraining/3Project/backend/teacher/exams/<?= (int) $exam['id'] ?>/delete"
+                        onsubmit="return confirm('Delete this exam?')"
+                    >
+                        <button
+                            type="submit"
+                            class="btn btn-outline-danger"
+                        >
+                            Delete exam
+                        </button>
+                    </form>
+                <?php endif; ?>
+
+                <?php if ($attempt === null): ?>
+                    <a
+                        href="/newSummerTraining/3Project/backend/teacher/exams/<?= (int) $exam['id'] ?>/test"
+                        class="btn btn-primary"
+                    >
+                        Test exam
+                    </a>
+                <?php else: ?>
+                    <span class="badge text-bg-success align-self-center p-2">
+                        Attempt submitted:
+                        <?= number_format((float) $attempt['mark'], 2) ?>
+                        marks
+                    </span>
+                <?php endif; ?>
+
+                <a
+                    href="/newSummerTraining/3Project/backend/teacher/courses/<?= (int) $course['id'] ?>"
+                    class="btn btn-outline-secondary"
+                >
+                    Back to course
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h5 mb-0">Exam information</h2>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="small text-body-secondary">Status</div>
+                        <span class="badge <?= $statusClass ?>">
+                            <?= $status ?>
+                        </span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="small text-body-secondary">Starts</div>
+                        <div class="fw-semibold">
+                            <?= htmlspecialchars(
+                                $exam['start_time'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="small text-body-secondary">Ends</div>
+                        <div class="fw-semibold">
+                            <?= htmlspecialchars(
+                                $exam['end_time'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="small text-body-secondary">Shuffle</div>
+                        <div class="fw-semibold">
+                            <?= (bool) $exam['shuffle_questions']
+                                ? 'Yes'
+                                : 'No' ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Questions</h2>
+
+                    <span class="badge text-bg-primary">
+                        Total marks:
+                        <?= number_format((float) $totalMarks, 2) ?>
+                    </span>
+                </div>
+            </div>
+
+            <?php if ($questions === []): ?>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">
+                        This exam has no questions.
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="list-group list-group-flush">
+                    <?php foreach ($questions as $index => $question): ?>
+                        <div class="list-group-item p-4">
+                            <div class="row align-items-center g-3">
+                                <div class="col">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <span class="badge text-bg-secondary">
+                                            Question <?= $index + 1 ?>
+                                        </span>
+
+                                        <span class="badge text-bg-info">
+                                            <?= $question['question_type']
+                                                === 'TrueOrFalse'
+                                                ? 'True / False'
+                                                : 'Multiple Choice' ?>
+                                        </span>
+                                    </div>
+
+                                    <p class="fw-semibold mb-0">
+                                        <?= htmlspecialchars(
+                                            $question['question_text'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+                                    </p>
+                                </div>
+
+                                <div class="col-auto">
+                                    <span class="badge text-bg-primary">
+                                        <?= number_format(
+                                            (float) $question['weight'],
+                                            2
+                                        ) ?>
+                                        marks
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($showReview && $attempt !== null): ?>
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0">Test attempt review</h2>
+
+                        <span class="badge text-bg-primary">
+                            Mark:
+                            <?= number_format(
+                                (float) $attempt['mark'],
+                                2
+                            ) ?>
+                            /
+                            <?= number_format(
+                                (float) $totalMarks,
+                                2
+                            ) ?>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <?php foreach ($reviewQuestions as $index => $question): ?>
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between gap-3 mb-3">
+                                <div>
+                                    <span class="badge text-bg-secondary mb-2">
+                                        Question <?= $index + 1 ?>
+                                    </span>
+
+                                    <h3 class="h6 mb-0">
+                                        <?= htmlspecialchars(
+                                            $question['question_text'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+                                    </h3>
+                                </div>
+
+                                <div class="text-end">
+                                    <span class="badge <?= $question['is_correct']
+                                        ? 'text-bg-success'
+                                        : 'text-bg-danger' ?>">
+                                        <?= $question['is_correct']
+                                            ? 'Correct'
+                                            : 'Incorrect' ?>
+                                    </span>
+
+                                    <div class="small mt-1">
+                                        <?= number_format(
+                                            (float) $question['earned_mark'],
+                                            2
+                                        ) ?>
+                                        /
+                                        <?= number_format(
+                                            (float) $question['weight'],
+                                            2
+                                        ) ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="vstack gap-2">
+                                <?php foreach ($question['choices'] as $choice): ?>
+                                    <?php
+                                    $isSelected =
+                                        (bool) $choice['is_selected'];
+
+                                    $isCorrectChoice =
+                                        (bool) $choice['is_correct'];
+
+                                    if ($isSelected && $isCorrectChoice) {
+                                        $choiceClass =
+                                            'border-success bg-success-subtle';
+                                        $choiceLabel =
+                                            'Selected — Correct';
+                                    } elseif ($isSelected) {
+                                        $choiceClass =
+                                            'border-danger bg-danger-subtle';
+                                        $choiceLabel =
+                                            'Selected — Incorrect';
+                                    } elseif ($isCorrectChoice) {
+                                        $choiceClass = 'border-success';
+                                        $choiceLabel = 'Correct answer';
+                                    } else {
+                                        $choiceClass = '';
+                                        $choiceLabel = '';
+                                    }
+                                    ?>
+
+                                    <div class="border rounded p-3 <?= $choiceClass ?>">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <span>
+                                                <?= htmlspecialchars(
+                                                    $choice['choice_text'],
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ) ?>
+                                            </span>
+
+                                            <?php if ($choiceLabel !== ''): ?>
+                                                <small class="fw-semibold">
+                                                    <?= $choiceLabel ?>
+                                                </small>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Student results</h2>
+
+                    <span class="badge text-bg-primary">
+                        <?= count($studentResults) ?> submitted
+                    </span>
+                </div>
+            </div>
+
+            <?php if ($studentResults === []): ?>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">
+                        No students have submitted this exam yet.
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Student</th>
+                                <th scope="col">Student ID</th>
+                                <th scope="col">Mark</th>
+                                <th scope="col">Submitted</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <?php foreach ($studentResults as $result): ?>
+                                <tr>
+                                    <td class="fw-semibold">
+                                        <?= htmlspecialchars(
+                                            $result['student_name'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars(
+                                            $result['personal_id'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge text-bg-primary">
+                                            <?= number_format(
+                                                (float) $result['mark'],
+                                                2
+                                            ) ?>
+                                            /
+                                            <?= number_format(
+                                                (float) $totalMarks,
+                                                2
+                                            ) ?>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars(
+                                            $result['submitted_at'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+</main>
+
+<?php require __DIR__ . '/../../partials/footer.phtml'; ?>

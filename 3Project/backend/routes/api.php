@@ -84,3 +84,88 @@ Router::post(
     '/api/questions/{id}/delete',
     ['QuestionController', 'delete']
 );
+
+Router::get(
+    '/student/courses',
+    ['StudentCourseController', 'index']
+);
+
+Router::get(
+    '/student/courses/enroll',
+    ['StudentCourseController', 'enrollmentList']
+);
+
+Router::post(
+    '/student/courses/{courseId}/enroll',
+    ['StudentCourseController', 'enroll']
+);
+
+Router::get(
+    '/student/courses/{courseId}',
+    ['StudentCourseController', 'show']
+);
+
+Router::get(
+    '/student/exams/{examId}',
+    ['StudentExamController', 'show']
+);
+
+Router::post(
+    '/student/exams/{examId}/submit',
+    ['StudentExamController', 'submit']
+);
+
+Router::get(
+    '/teacher/courses/{courseId}',
+    ['TeacherCourseController', 'show']
+);
+
+Router::get(
+    '/home',
+    ['AuthController', 'home']
+);
+
+Router::post(
+    '/teacher/courses/{courseId}/co-teach',
+    ['TeacherCourseController', 'coTeach']
+);
+
+Router::get(
+    '/teacher/courses/{courseId}/exams/create',
+    ['TeacherExamController', 'create']
+);
+
+Router::post(
+    '/teacher/courses/{courseId}/exams',
+    ['TeacherExamController', 'store']
+);
+
+Router::get(
+    '/teacher/exams/{examId}',
+    ['TeacherExamController', 'show']
+);
+
+Router::get(
+    '/teacher/exams/{examId}/test',
+    ['TeacherExamController', 'test']
+);
+
+Router::post(
+    '/teacher/exams/{examId}/test',
+    ['TeacherExamController', 'submitTest']
+);
+
+Router::get(
+    '/teacher/exams/{examId}/edit',
+    ['TeacherExamController', 'edit']
+);
+
+Router::post(
+    '/teacher/exams/{examId}/update',
+    ['TeacherExamController', 'update']
+);
+
+Router::post(
+    '/teacher/exams/{examId}/delete',
+    ['TeacherExamController', 'delete']
+);

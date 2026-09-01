@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Utils\ViewModel;
+use App\Models\CourseStudent;
+use App\Models\Exam;
 
 class DashboardController
 {
@@ -18,12 +20,22 @@ class DashboardController
                 'name' => $name
             ]);
         }
-
+        
         if ($role === 'student') {
-            return new ViewModel('dashboards/student',[
-                'name' => $name
-            ]);
-        }
+        $studentId = (int) $_SESSION['user_id'];
+
+        $courses = (new CourseStudent())
+            ->getCoursesByStudent($studentId);
+
+        $availableExams = (new Exam())
+            ->getAvailableForStudent($studentId);
+
+        return new ViewModel('dashboards/student', [
+            'name' => $name,
+            'courseCount' => count($courses),
+            'upcomingExamCount' => count($availableExams)
+        ]);
+    }
 
         http_response_code(403);
 

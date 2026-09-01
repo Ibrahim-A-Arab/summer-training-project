@@ -63,6 +63,29 @@ class ExamResult
         );
     }
 
+    public function getStudentResultsByExam(int $examId): array
+    {
+        return $this->db->select(
+            'SELECT er.id,
+                    er.exam_id,
+                    er.student_id,
+                    er.mark,
+                    er.submitted_at,
+                    u.name AS student_name,
+                    u.personal_id
+            FROM exam_results er
+            JOIN users u ON u.id = er.student_id
+            WHERE er.exam_id = :exam_id
+                AND u.role = :role
+                AND er.submitted_at IS NOT NULL
+            ORDER BY u.name',
+            [
+                'exam_id' => $examId,
+                'role' => 'student'
+            ]
+        );
+    }
+
     public function getByStudent(int $studentId): array
     {
         return $this->db->select(
@@ -120,6 +143,17 @@ class ExamResult
                 'exam_id' => $examId,
                 'student_id' => $studentId
             ]
+        ) !== [];
+    }
+
+    public function hasAnyAttempt(int $examId): bool
+    {
+        return $this->db->select(
+            'SELECT id
+            FROM exam_results
+            WHERE exam_id = :exam_id
+            LIMIT 1',
+            ['exam_id' => $examId]
         ) !== [];
     }
 }

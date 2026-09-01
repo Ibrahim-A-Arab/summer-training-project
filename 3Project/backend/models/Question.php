@@ -33,10 +33,10 @@ class Question
         return $questions[0] ?? null;
     }
 
-    public function getByCourseId(int $courseId): array //all question bank of a course
+    public function getByCourseId(int $courseId): array
     {
         return $this->db->select(
-            'SELECT id, course_id, question_text
+            'SELECT id, course_id, question_text, question_type
             FROM questions
             WHERE course_id = :course_id
             ORDER BY id',
@@ -95,9 +95,6 @@ class Question
 
     public function delete(int $id): bool
     {
-        $questionModel = new Question();
-        $questionId = (int) $id;
-
         return $this->db->execute(
             'DELETE FROM questions
             WHERE id = :id',

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Routes;
 
+use App\Utils\ViewModel;
+
 class Router{
 
     private static array $routes = [];
@@ -71,7 +73,9 @@ class Router{
         }
 
         http_response_code(404);
-        echo '404 - Route not found';
+
+        $view = new ViewModel('errors/404');
+        $view->render();
     }
 
 

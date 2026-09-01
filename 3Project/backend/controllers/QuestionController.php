@@ -6,17 +6,20 @@ namespace App\Controllers;
 
 use App\Models\Choice;
 use App\Models\Course;
+use App\Models\CourseTeacher;
 use App\Models\Question;
 use App\Utils\Database;
 use App\Utils\ViewModel;
 
-
-
-
 class QuestionController
 {
+    private const BASE_PATH = '/newSummerTraining/3Project/backend';
+
     public function getAll(): ViewModel
     {
+        if (!$this->isTeacher()) {
+            return $this->forbidden();
+        }
 
         $questionModel = new Question();
         $questions = $questionModel->getAll();
@@ -29,22 +32,31 @@ class QuestionController
 
     public function getByCourse(string $courseId): ViewModel
     {
-        $courseId = (int) $courseId;
+        if (!$this->isTeacher()) {
+            return $this->forbidden();
+        }
 
-        $courseModel = new Course(); //check if the course even exists.
+        $courseId = (int) $courseId;
+        $teacherId = (int) $_SESSION['user_id'];
+
+        $courseModel = new Course();
         $course = $courseModel->getById($courseId);
 
         if ($course === null) {
-            http_response_code(404);
-
-            return new ViewModel('errors/404');
+            return $this->notFound();
         }
 
-        $questions = (new Question())->getByCourseId($courseId);
+        if (!$this->isAssigned($courseId, $teacherId)) {
+            return $this->forbidden();
+        }
+
+        $questions = (new Question())
+            ->getByCourseId($courseId);
 
         return new ViewModel('questions/index', [
-            'questions' => $questions,
-            'courseId' => $courseId
+            'course' => $course,
+            'courseId' => $courseId,
+            'questions' => $questions
         ]);
     }
 
@@ -66,6 +78,10 @@ class QuestionController
             ]);
         }
 
+        if (!$this->canAccessQuestion($question)) {
+            return $this->forbidden();
+        }
+
         $choices = $choiceModel->getByQuestionId(
             $questionId
         );
@@ -81,14 +97,17 @@ class QuestionController
         $courseId = (int) $courseId;
 
         if (!(new Course())->exists($courseId)) {
-            http_response_code(404);
+            return $this->notFound();
+        }
 
-            return new ViewModel('errors/404');
+        if (!$this->canAccessCourse($courseId)) {
+            return $this->forbidden();
         }
 
         return new ViewModel('questions/create', [
             'courseId' => $courseId
         ]);
+        
     }
 
     public function store(string $courseId): ViewModel
@@ -102,9 +121,11 @@ class QuestionController
 
         // Confirm that the course exists.
         if (!$courseModel->exists($courseId)) {
-            http_response_code(404);
+            return $this->notFound();
+        }
 
-            return new ViewModel('errors/404');
+        if (!$this->canAccessCourse($courseId)) {
+            return $this->forbidden();
         }
 
         // Validate the question text.
@@ -278,6 +299,10 @@ class QuestionController
             ]);
         }
 
+        if (!$this->canAccessQuestion($question)) {
+            return $this->forbidden();
+        }
+
 
 
         if ($questionModel->isUsedInExam($questionId)) {
@@ -320,6 +345,10 @@ class QuestionController
                 'question' => null,
                 'choices' => []
             ]);
+        }
+
+        if (!$this->canAccessQuestion($question)) {
+            return $this->forbidden();
         }
 
         if ($questionModel->isUsedInExam($questionId)) {
@@ -500,11 +529,17 @@ class QuestionController
             ]);
         }
 
+        if (!$this->canAccessQuestion($question)) {
+            return $this->forbidden();
+        }
+
         if ($questionModel->isUsedInExam($questionId)) {
             http_response_code(409);
 
             return new ViewModel('questions/show', [
                 'question' => $question,
+                'choices' => (new Choice())
+                    ->getByQuestionId($questionId),
                 'error' => 'This question cannot be deleted because it is used by an exam.'
             ]);
         }
@@ -519,11 +554,61 @@ class QuestionController
     private function redirectToQuestions(int $courseId): never
     {
         header(
-            "Location: /newSummerTraining/3Project/backend/api/courses/$courseId/questions",
+            'Location: '
+                . self::BASE_PATH
+                . "/api/courses/$courseId/questions",
             true,
             303
         );
 
         exit;
+    }
+
+    private function isTeacher(): bool
+    {
+        return ($_SESSION['role'] ?? '') === 'teacher';
+    }
+
+    private function canAccessCourse(int $courseId): bool
+    {
+        if (!$this->isTeacher()) {
+            return false;
+        }
+
+        return $this->isAssigned(
+            $courseId,
+            (int) ($_SESSION['user_id'] ?? 0)
+        );
+    }
+
+    private function canAccessQuestion(array $question): bool
+    {
+        return $this->canAccessCourse(
+            (int) $question['course_id']
+        );
+    }
+
+    private function isAssigned(
+        int $courseId,
+        int $teacherId
+    ): bool {
+        return (new CourseTeacher())->isAssigned(
+            $courseId,
+            $teacherId
+        );
+    }
+
+    private function forbidden(): ViewModel
+    {
+        http_response_code(403);
+
+        return new ViewModel('errors/403');
+    }
+
+    private function notFound(): ViewModel
+    {
+        http_response_code(404);
+
+        return new ViewModel('errors/404');
     }
 }

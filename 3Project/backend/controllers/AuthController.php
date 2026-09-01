@@ -1,5 +1,6 @@
 <?php
-
+//just realized this
+//should've been named authentication, because auth can be an abreviation for authorization too.
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -182,5 +183,12 @@ class AuthController
         );
 
         exit;
+    }
+
+    public function home(): ViewModel
+    {
+        return new ViewModel('home', [
+            'name' => $_SESSION['name'] ?? ''
+        ]);
     }
 }

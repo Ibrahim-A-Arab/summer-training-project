@@ -1,0 +1,128 @@
+<?php
+$courses ??= [];
+
+$pageTitle = 'Enroll in Courses';
+$activePage = 'courses';
+
+$search ??= '';
+
+require __DIR__ . '/../../partials/header.phtml';
+?>
+
+<main class="container py-5">
+
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Enroll in Courses</h1>
+            <p class="text-body-secondary mb-0">
+                Select a course to join.
+            </p>
+        </div>
+
+        <a
+            href="/newSummerTraining/3Project/backend/student/courses"
+            class="btn btn-outline-secondary"
+        >
+            Back to My Courses
+        </a>
+    </div>
+
+    <form
+        method="GET"
+        action="/newSummerTraining/3Project/backend/student/courses/enroll"
+        class="card card-body shadow-sm mb-4"
+    >
+        <label for="search" class="form-label">
+            Search courses
+        </label>
+
+        <div class="input-group">
+            <input
+                id="search"
+                name="search"
+                type="search"
+                class="form-control"
+                placeholder="Course name or code, e.g. COMP 1330"
+                value="<?= htmlspecialchars(
+                    $search,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) ?>"
+            >
+
+            <button type="submit" class="btn btn-primary">
+                Search
+            </button>
+
+            <?php if ($search !== ''): ?>
+                <a
+                    href="/newSummerTraining/3Project/backend/student/courses/enroll"
+                    class="btn btn-outline-secondary"
+                >
+                    Clear
+                </a>
+            <?php endif; ?>
+        </div>
+    </form>
+    
+    
+    <?php if ($courses === []): ?>
+        <div class="alert alert-info">
+            <?php if ($search !== ''): ?>
+                No available courses matched
+                <strong>
+                    “<?= htmlspecialchars(
+                        $search,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>”
+                </strong>.
+            <?php else: ?>
+                You are already enrolled in every available course.
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <?php foreach ($courses as $course): ?>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <span class="badge text-bg-primary mb-3">
+                                <?= htmlspecialchars(
+                                    $course['course_code'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+                            </span>
+
+                            <h2 class="card-title h5">
+                                <?= htmlspecialchars(
+                                    $course['course_name'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+                            </h2>
+                        </div>
+
+                        <div class="card-footer bg-transparent border-0 pt-0">
+                            <form
+                                method="POST"
+                                action="/newSummerTraining/3Project/backend/student/courses/<?= (int) $course['id'] ?>/enroll"
+                            >
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary w-100"
+                                >
+                                    Enroll
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</main>
+
+<?php require __DIR__ . '/../../partials/footer.phtml'; ?>

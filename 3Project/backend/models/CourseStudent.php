@@ -80,4 +80,55 @@ class CourseStudent
             ]
         ) !== [];
     }
+
+    public function getAvailableCourses(
+        int $studentId,
+        string $search = ''
+    ): array {
+        $sql = '
+            SELECT c.id, c.course_code, c.course_name
+            FROM courses c
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM course_students cs
+                WHERE cs.course_id = c.id
+                AND cs.student_id = :student_id
+            )
+        ';
+
+        $params = [
+            'student_id' => $studentId
+        ];
+
+        $search = trim($search);
+
+        if ($search !== '') {
+            $normalizedCode = preg_replace(
+                '/[\s-]+/',
+                '',
+                strtolower($search)
+            );
+
+            $sql .= '
+                AND (
+                    LOWER(c.course_name) LIKE :name_search
+                    OR REPLACE(
+                        REPLACE(LOWER(c.course_code), " ", ""),
+                        "-",
+                        ""
+                    ) LIKE :code_search
+                )
+            ';
+
+            $params['name_search'] =
+                '%' . strtolower($search) . '%';
+
+            $params['code_search'] =
+                '%' . $normalizedCode . '%';
+        }
+
+        $sql .= ' ORDER BY c.course_name';
+
+        return $this->db->select($sql, $params);
+    }
 }

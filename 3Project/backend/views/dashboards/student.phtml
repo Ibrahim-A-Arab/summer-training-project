@@ -1,11 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    student
-</body>
-</html>
+<?php
+
+$name ??= '';
+
+$pageTitle = 'Student Dashboard';
+$activePage = 'dashboard';
+$courseCount ??= 0;
+$upcomingExamCount ??= 0;
+
+require __DIR__ . '/../partials/header.phtml';
+
+?>
+
+<main class="container py-5">
+    <h1 class="mb-2">
+        Welcome,
+        <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>
+    </h1>
+
+    <p class="text-body-secondary mb-4">
+        Student dashboard
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="h5">My courses</h2>
+
+            <p class="text-body-secondary">
+                View your enrolled courses.
+            </p>
+
+            <a
+                class="btn btn-primary"
+                href="/newSummerTraining/3Project/backend/student/courses"
+            >
+                View my courses
+            </a>
+        </div>
+        <div class="card-body">
+            <p class="text-body-secondary">You are enrolled in <?= $courseCount ?> courses.</p>
+            <p class="text-body-secondary">You have <?= $upcomingExamCount ?> available exams.</p>
+        </div>
+        
+    </div>
+</main>
+
+<?php require __DIR__ . '/../partials/footer.phtml'; ?>
