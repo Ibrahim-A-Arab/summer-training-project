@@ -13,6 +13,19 @@ use App\Utils\ViewModel;
 
 class QuestionController
 {
+    private Question $questionModel;
+    private Choice $choiceModel;
+    private Course $courseModel;
+    private CourseTeacher $courseTeacherModel;
+
+    public function __construct()
+    {
+        $this->questionModel = new Question();
+        $this->choiceModel = new Choice();
+        $this->courseModel = new Course();
+        $this->courseTeacherModel = new CourseTeacher();
+    }
+
     private const BASE_PATH = '/newSummerTraining/3Project/backend';
 
     public function getAll(): ViewModel
@@ -21,8 +34,7 @@ class QuestionController
             return $this->forbidden();
         }
 
-        $questionModel = new Question();
-        $questions = $questionModel->getAll();
+        $questions = $this->questionModel->getAll();
 
 
         return new ViewModel('questions/index', [
@@ -39,8 +51,8 @@ class QuestionController
         $courseId = (int) $courseId;
         $teacherId = (int) $_SESSION['user_id'];
 
-        $courseModel = new Course();
-        $course = $courseModel->getById($courseId);
+
+        $course = $this->courseModel->getById($courseId);
 
         if ($course === null) {
             return $this->notFound();
@@ -50,8 +62,7 @@ class QuestionController
             return $this->forbidden();
         }
 
-        $questions = (new Question())
-            ->getByCourseId($courseId);
+        $questions = $this->questionModel->getByCourseId($courseId);
 
         return new ViewModel('questions/index', [
             'course' => $course,
@@ -64,10 +75,7 @@ class QuestionController
     {
         $questionId = (int) $id;
 
-        $questionModel = new Question();
-        $choiceModel = new Choice();
-
-        $question = $questionModel->getById((int) $id);
+        $question = $this->questionModel->getById((int) $id);
 
         if ($question === null) {
             http_response_code(404);
@@ -82,7 +90,7 @@ class QuestionController
             return $this->forbidden();
         }
 
-        $choices = $choiceModel->getByQuestionId(
+        $choices = $this->choiceModel->getByQuestionId(
             $questionId
         );
 
@@ -96,7 +104,7 @@ class QuestionController
     {
         $courseId = (int) $courseId;
 
-        if (!(new Course())->exists($courseId)) {
+        if (!$this->courseModel->exists($courseId)) {
             return $this->notFound();
         }
 
@@ -117,10 +125,8 @@ class QuestionController
         $questionText = trim($_POST['question'] ?? '');
         $submittedChoices = $_POST['choices'] ?? [];
 
-        $courseModel = new Course();
-
         // Confirm that the course exists.
-        if (!$courseModel->exists($courseId)) {
+        if (!$this->courseModel->exists($courseId)) {
             return $this->notFound();
         }
 
@@ -247,14 +253,13 @@ class QuestionController
         }
 
         $db = Database::getInstance();
-        $questionModel = new Question();
-        $choiceModel = new Choice();
+
 
         $db->beginTransaction();
 
         try {
             // Save the question and get its new ID.
-            $questionId = $questionModel->create(
+            $questionId = $this->questionModel->create(
                 $courseId,
                 $questionText,
                 $questionType
@@ -262,7 +267,7 @@ class QuestionController
 
             // Save every choice under the new question.
             foreach ($choices as $choice) {
-                $choiceModel->create(
+                $this->choiceModel->create(
                     $questionId,
                     $choice['text'],
                     $choice['is_correct']
@@ -285,10 +290,7 @@ class QuestionController
     {
         $questionId = (int) $id;
 
-        $questionModel = new Question();
-        $choiceModel = new Choice();
-
-        $question = $questionModel->getById((int) $id);
+        $question = $this->questionModel->getById((int) $id);
 
         if ($question === null) {
             http_response_code(404);
@@ -305,12 +307,12 @@ class QuestionController
 
 
 
-        if ($questionModel->isUsedInExam($questionId)) {
+        if ($this->questionModel->isUsedInExam($questionId)) {
             http_response_code(409);
 
             return new ViewModel('questions/show', [
                 'question' => $question,
-                'choices' => $choiceModel->getByQuestionId(
+                'choices' => $this->choiceModel->getByQuestionId(
                     $questionId
                 ),
                 'error' => 'This question cannot be edited because it is used by an exam.'
@@ -319,7 +321,7 @@ class QuestionController
 
         return new ViewModel('questions/edit', [
             'question' => $question,
-            'choices' => $choiceModel->getByQuestionId(
+            'choices' => $this->choiceModel->getByQuestionId(
                 $questionId
             )
         ]);
@@ -333,10 +335,7 @@ class QuestionController
         $questionType = $_POST['question_type'] ?? '';
         $questionText = trim($_POST['question'] ?? '');
 
-        $questionModel = new Question();
-        $choiceModel = new Choice();
-
-        $question = $questionModel->getById($questionId);
+        $question = $this->questionModel->getById($questionId);
 
         if ($question === null) {
             http_response_code(404);
@@ -351,12 +350,12 @@ class QuestionController
             return $this->forbidden();
         }
 
-        if ($questionModel->isUsedInExam($questionId)) {
+        if ($this->questionModel->isUsedInExam($questionId)) {
             http_response_code(409);
 
             return new ViewModel('questions/show', [
                 'question' => $question,
-                'choices' => $choiceModel->getByQuestionId($questionId),
+                'choices' => $this->choiceModel->getByQuestionId($questionId),
                 'error' => 'This question cannot be edited because it is used by an exam.'
             ]);
         }
@@ -486,16 +485,16 @@ class QuestionController
         $db->beginTransaction();
 
         try {
-            $questionModel->update(
+            $this->questionModel->update(
                 $questionId,
                 $courseId,
                 $questionText
             );
 
-            $choiceModel->deleteByQuestionId($questionId);
+            $this->choiceModel->deleteByQuestionId($questionId);
 
             foreach ($choices as $choice) {
-                $choiceModel->create(
+                $this->choiceModel->create(
                     $questionId,
                     $choice['text'],
                     $choice['is_correct']
@@ -516,10 +515,9 @@ class QuestionController
 
     public function delete(string $id): ViewModel
     {
-        $questionModel = new Question();
         $questionId = (int) $id;
 
-        $question = $questionModel->getById($questionId);
+        $question = $this->questionModel->getById($questionId);
 
         if ($question === null) {
             http_response_code(404);
@@ -533,12 +531,12 @@ class QuestionController
             return $this->forbidden();
         }
 
-        if ($questionModel->isUsedInExam($questionId)) {
+        if ($this->questionModel->isUsedInExam($questionId)) {
             http_response_code(409);
 
             return new ViewModel('questions/show', [
                 'question' => $question,
-                'choices' => (new Choice())
+                'choices' => $this->choiceModel
                     ->getByQuestionId($questionId),
                 'error' => 'This question cannot be deleted because it is used by an exam.'
             ]);
@@ -546,7 +544,7 @@ class QuestionController
 
         $courseId = (int) $question['course_id'];
 
-        $questionModel->delete($questionId);
+        $this->questionModel->delete($questionId);
 
         $this->redirectToQuestions($courseId);
     }
@@ -556,7 +554,7 @@ class QuestionController
         header(
             'Location: '
                 . self::BASE_PATH
-                . "/api/courses/$courseId/questions",
+                . "/api/courses/questions/$courseId",
             true,
             303
         );
@@ -592,7 +590,7 @@ class QuestionController
         int $courseId,
         int $teacherId
     ): bool {
-        return (new CourseTeacher())->isAssigned(
+        return $this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         );

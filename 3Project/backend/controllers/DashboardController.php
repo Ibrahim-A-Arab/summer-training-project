@@ -10,6 +10,15 @@ use App\Models\Exam;
 
 class DashboardController
 {
+    private CourseStudent $courseStudentModel;
+    private Exam $examModel;
+
+    public function __construct()
+    {
+        $this->courseStudentModel = new CourseStudent();
+        $this->examModel = new Exam();
+    }
+
     public function index(): ViewModel
     {
         $role = $_SESSION['role'] ?? '';
@@ -24,10 +33,10 @@ class DashboardController
         if ($role === 'student') {
         $studentId = (int) $_SESSION['user_id'];
 
-        $courses = (new CourseStudent())
+        $courses = $this->courseStudentModel
             ->getCoursesByStudent($studentId);
 
-        $availableExams = (new Exam())
+        $availableExams = $this->examModel
             ->getAvailableForStudent($studentId);
 
         return new ViewModel('dashboards/student', [

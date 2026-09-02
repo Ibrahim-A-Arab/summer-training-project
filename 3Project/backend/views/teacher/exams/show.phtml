@@ -70,7 +70,7 @@ require __DIR__ . '/../../partials/header.phtml';
             <div class="d-flex flex-wrap gap-2">
                 <?php if ($now < $start && !$hasAnyAttempt): ?>
                     <a
-                        href="/newSummerTraining/3Project/backend/teacher/exams/<?= (int) $exam['id'] ?>/edit"
+                        href="/newSummerTraining/3Project/backend/teacher/exams/edit/<?= (int) $exam['id'] ?>"
                         class="btn btn-outline-primary"
                     >
                         Edit exam
@@ -78,7 +78,7 @@ require __DIR__ . '/../../partials/header.phtml';
 
                     <form
                         method="POST"
-                        action="/newSummerTraining/3Project/backend/teacher/exams/<?= (int) $exam['id'] ?>/delete"
+                        action="/newSummerTraining/3Project/backend/teacher/exams/delete/<?= (int) $exam['id'] ?>"
                         onsubmit="return confirm('Delete this exam?')"
                     >
                         <button
@@ -92,7 +92,7 @@ require __DIR__ . '/../../partials/header.phtml';
 
                 <?php if ($attempt === null): ?>
                     <a
-                        href="/newSummerTraining/3Project/backend/teacher/exams/<?= (int) $exam['id'] ?>/test"
+                        href="/newSummerTraining/3Project/backend/teacher/exams/test/<?= (int) $exam['id'] ?>"
                         class="btn btn-primary"
                     >
                         Test exam

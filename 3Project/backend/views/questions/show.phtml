@@ -90,8 +90,8 @@ require __DIR__ . '/../partials/header.phtml';
                 <a
                     href="<?= $question !== null
                         ? '/newSummerTraining/3Project/backend/api/courses/'
+                            . 'questions/'
                             . (int) $question['course_id']
-                            . '/questions'
                         : '/newSummerTraining/3Project/backend/api/courses' ?>"
                     class="btn btn-outline-secondary"
                 >

@@ -15,6 +15,22 @@ use App\Utils\Database;
 
 class StudentExamController
 {
+    private Exam $examModel;
+    private ExamResult $examResultModel;
+    private CourseStudent $courseStudentModel;
+    private ExamQuestion $examQuestionModel;
+    private Choice $choiceModel;
+    private StudentAnswer $studentAnswerModel;
+
+    public function __construct()
+    {
+        $this->examModel = new Exam();
+        $this->examResultModel = new ExamResult();
+        $this->courseStudentModel = new CourseStudent();
+        $this->examQuestionModel = new ExamQuestion();
+        $this->choiceModel = new Choice();
+        $this->studentAnswerModel = new StudentAnswer();
+    }
     public function show(string $examId): ViewModel
     {
         if (($_SESSION['role'] ?? '') !== 'student') {
@@ -26,7 +42,7 @@ class StudentExamController
         $studentId = (int) $_SESSION['user_id'];
         $examId = (int) $examId;
 
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -36,15 +52,14 @@ class StudentExamController
 
         $courseId = (int) $exam['course_id'];
 
-        $resultModel = new ExamResult();
 
-        if ($resultModel->hasSubmitted($examId, $studentId)) {
+        if ($this->examResultModel->hasSubmitted($examId, $studentId)) {
             http_response_code(403);
 
             return new ViewModel('errors/403');
         }
 
-        $isEnrolled = (new CourseStudent())
+        $isEnrolled = $this->courseStudentModel
             ->isEnrolled($courseId, $studentId);
 
         if (!$isEnrolled) {
@@ -71,13 +86,12 @@ class StudentExamController
             return new ViewModel('errors/403');
         }
 
-        $questions = (new ExamQuestion())
+        $questions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
-        $choiceModel = new Choice();
 
         foreach ($questions as &$question) {
-            $question['choices'] = $choiceModel
+            $question['choices'] = $this->choiceModel
                 ->getByQuestionId((int) $question['id']);
         }
 
@@ -103,7 +117,7 @@ class StudentExamController
         $studentId = (int) $_SESSION['user_id'];
         $examId = (int) $examId;
 
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -112,7 +126,7 @@ class StudentExamController
 
         $courseId = (int) $exam['course_id'];
 
-        if (!(new CourseStudent())->isEnrolled($courseId, $studentId)) {
+        if (!$this->courseStudentModel->isEnrolled($courseId, $studentId)) {
             http_response_code(403);
             exit;
         }
@@ -127,10 +141,9 @@ class StudentExamController
             exit;
         }
 
-        $resultModel = new ExamResult();
 
         // One result/attempt per student and exam.
-        if ($resultModel->getByExamAndStudent($examId, $studentId) !== null) {
+        if ($this->examResultModel->getByExamAndStudent($examId, $studentId) !== null) {
             http_response_code(403);
             exit;
         }
@@ -141,16 +154,15 @@ class StudentExamController
             $submittedAnswers = [];
         }
 
-        $questions = (new ExamQuestion())
+        $questions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
         $database = Database::getInstance();
-        $answerModel = new StudentAnswer();
 
         try {
             $database->beginTransaction();
 
-            $resultId = $resultModel->create($examId, $studentId);
+            $resultId = $this->examResultModel->create($examId, $studentId);
 
             foreach ($questions as $question) {
                 $questionId = (int) $question['id'];
@@ -170,7 +182,7 @@ class StudentExamController
                     }
 
                     if (
-                        $answerModel->create(
+                        $this->studentAnswerModel->create(
                             $resultId,
                             $questionId,
                             $choiceId
@@ -187,7 +199,7 @@ class StudentExamController
 
             foreach ($questions as $question) {
                 if (
-                    $answerModel->isCorrect(
+                    $this->studentAnswerModel->isCorrect(
                         $resultId,
                         (int) $question['id']
                     )
@@ -196,7 +208,7 @@ class StudentExamController
                 }
             }
 
-            if (!$resultModel->submit($resultId, $mark)) {
+            if (!$this->examResultModel->submit($resultId, $mark)) {
                 throw new \RuntimeException(
                     'The exam could not be submitted.'
                 );

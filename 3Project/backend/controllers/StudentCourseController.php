@@ -11,6 +11,16 @@ use App\Models\Exam;
 
 class StudentCourseController
 {
+    private CourseStudent $courseStudentModel;
+    private Course $courseModel;
+    private Exam $examModel;
+
+    public function __construct()
+    {
+        $this->courseStudentModel = new CourseStudent();
+        $this->courseModel = new Course();
+        $this->examModel = new Exam();
+    }
     public function index(): ViewModel
     {
         if (($_SESSION['role'] ?? '') !== 'student') {
@@ -21,7 +31,7 @@ class StudentCourseController
 
         $studentId = (int) $_SESSION['user_id'];
 
-        $courses = (new CourseStudent())
+        $courses = $this->courseStudentModel
             ->getCoursesByStudent($studentId);
 
         return new ViewModel('student/courses/index', [
@@ -40,7 +50,7 @@ class StudentCourseController
         $studentId = (int) $_SESSION['user_id'];
         $search = trim($_GET['search'] ?? '');
 
-        $courses = (new CourseStudent())
+        $courses = $this->courseStudentModel
             ->getAvailableCourses($studentId, $search);
 
         return new ViewModel('student/courses/enroll', [
@@ -59,16 +69,15 @@ class StudentCourseController
         $courseId = (int) $courseId;
         $studentId = (int) $_SESSION['user_id'];
 
-        $courseModel = new Course();
-        $enrollmentModel = new CourseStudent();
 
-        if (!$courseModel->exists($courseId)) {
+
+        if (!$this->courseModel->exists($courseId)) {
             http_response_code(404);
             exit;
         }
 
-        if (!$enrollmentModel->isEnrolled($courseId, $studentId)) {
-            $enrollmentModel->enroll($courseId, $studentId);
+        if (!$this->courseStudentModel->isEnrolled($courseId, $studentId)) {
+            $this->courseStudentModel->enroll($courseId, $studentId);
         }
 
         header(
@@ -91,21 +100,20 @@ class StudentCourseController
         $courseId = (int) $courseId;
         $studentId = (int) $_SESSION['user_id'];
 
-        $courseModel = new Course();
-        $enrollmentModel = new CourseStudent();
 
-        $course = $courseModel->getById($courseId);
+
+        $course = $this->courseModel->getById($courseId);
 
         if (
             $course === null
-            || !$enrollmentModel->isEnrolled($courseId, $studentId)
+            || !$this->courseStudentModel->isEnrolled($courseId, $studentId)
         ) {
             http_response_code(404);
 
             return new ViewModel('errors/404');
         }
 
-        $exams = (new Exam())->getByCourseId($courseId);
+        $exams = $this->examModel->getByCourseId($courseId);
 
         return new ViewModel('student/courses/show', [
             'course' => $course,

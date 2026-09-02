@@ -12,6 +12,19 @@ use App\Utils\ViewModel;
 
 class TeacherCourseController
 {
+    private Course $courseModel;
+    private CourseTeacher $courseTeacherModel;
+    private CourseStudent $courseStudentModel;
+    private Exam $examModel;
+
+    public function __construct()
+    {
+        $this->courseModel = new Course();
+        $this->courseTeacherModel = new CourseTeacher();
+        $this->courseStudentModel = new CourseStudent();
+        $this->examModel = new Exam();
+    }
+    
     public function show(string $courseId): ViewModel
     {
         if (($_SESSION['role'] ?? '') !== 'teacher') {
@@ -23,7 +36,7 @@ class TeacherCourseController
         $courseId = (int) $courseId;
         $teacherId = (int) ($_SESSION['user_id'] ?? 0);
 
-        $course = (new Course())->getById($courseId);   
+        $course = $this->courseModel->getById($courseId);   
 
         if ($course === null) {
             http_response_code(404);
@@ -31,7 +44,7 @@ class TeacherCourseController
             return new ViewModel('errors/404');
         }
 
-        $isAssigned = (new CourseTeacher())->isAssigned(
+        $isAssigned = $this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         );
@@ -42,10 +55,10 @@ class TeacherCourseController
             return new ViewModel('errors/403');
         }
 
-        $students = (new CourseStudent())
+        $students = $this->courseStudentModel
             ->getStudentsByCourse($courseId);
 
-        $exams = (new Exam())
+        $exams = $this->examModel
             ->getByCourseId($courseId);
 
         return new ViewModel('teacher/courses/show', [
@@ -66,20 +79,19 @@ class TeacherCourseController
         $teacherId = (int) ($_SESSION['user_id'] ?? 0);
         $courseId = (int) $courseId;
 
-        $course = (new Course())->getById($courseId);
+        $course = $this->courseModel->getById($courseId);
 
         if ($course === null) {
             http_response_code(404);
             exit;
         }
 
-        $courseTeacherModel = new CourseTeacher();
 
-        if (!$courseTeacherModel->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         )) {
-            $courseTeacherModel->assignTeacher(
+            $this->courseTeacherModel->assignTeacher(
                 $courseId,
                 $teacherId
             );

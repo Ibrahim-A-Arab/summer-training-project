@@ -11,8 +11,15 @@ use App\Utils\ViewModel;
 class CourseController
 {
     private const BASE_PATH = '/newSummerTraining/3Project/backend';
+    private Course $courseModel;
+    private CourseTeacher $courseTeacherModel;
 
-    public function index(): ViewModel
+    public function __construct()
+    {
+        $this->courseModel = new Course();
+        $this->courseTeacherModel = new CourseTeacher();
+    }
+        public function index(): ViewModel
     {
         if (!$this->isTeacher()) {
             return $this->forbidden();
@@ -21,12 +28,11 @@ class CourseController
         $teacherId = (int) $_SESSION['user_id'];
         $search = trim($_GET['search'] ?? '');
 
-        $courseTeacherModel = new CourseTeacher();
 
-        $courses = $courseTeacherModel
+        $courses = $this->courseTeacherModel
             ->getCoursesByTeacher($teacherId);
 
-        $availableCourses = $courseTeacherModel
+        $availableCourses = $this->courseTeacherModel
             ->getAvailableCourses($teacherId, $search);
 
         return new ViewModel('courses/index', [
@@ -64,9 +70,8 @@ class CourseController
             ]);
         }
 
-        $courseModel = new Course();
 
-        if ($courseModel->getByCode($code) !== null) {
+        if ($this->courseModel->getByCode($code) !== null) {
             http_response_code(422);
 
             return new ViewModel('courses/create', [
@@ -77,9 +82,9 @@ class CourseController
         }
 
 
-        $courseId = $courseModel->create($code, $name);
+        $courseId = $this->courseModel->create($code, $name);
 
-        (new CourseTeacher())->assignTeacher(
+        $this->courseTeacherModel->assignTeacher(
             $courseId,
             (int) $_SESSION['user_id']
         );

@@ -37,7 +37,7 @@ require __DIR__ . '/../partials/header.phtml';
         </div>
 
         <a
-            href="/newSummerTraining/3Project/backend/api/courses/<?= (int) $courseId ?>/questions/create"
+            href="/newSummerTraining/3Project/backend/api/courses/questions/create/<?= (int) $courseId ?>"
             class="btn btn-primary"
         >
             Add question
@@ -98,7 +98,7 @@ require __DIR__ . '/../partials/header.phtml';
                                 <div class="d-flex flex-wrap gap-2">
 
                                     <a
-                                        href="/newSummerTraining/3Project/backend/api/questions/<?= (int) $question['id'] ?>/edit"
+                                        href="/newSummerTraining/3Project/backend/api/questions/edit/<?= (int) $question['id'] ?>"
                                         class="btn btn-outline-secondary btn-sm"
                                     >
                                         Edit
@@ -106,7 +106,7 @@ require __DIR__ . '/../partials/header.phtml';
 
                                     <form
                                         method="POST"
-                                        action="/newSummerTraining/3Project/backend/api/questions/<?= (int) $question['id'] ?>/delete"
+                                        action="/newSummerTraining/3Project/backend/api/questions/delete/<?= (int) $question['id'] ?>"
                                         class="d-inline"
                                     >
                                         <button

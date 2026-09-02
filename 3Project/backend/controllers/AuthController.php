@@ -10,6 +10,12 @@ use App\Utils\ViewModel;
 
 class AuthController
 {
+    private User $userModel;
+
+    public function __construct()
+    {
+        $this->userModel = new User();
+    }
     public function showLogin(): ViewModel
     {
         return new ViewModel('auth/login');
@@ -88,9 +94,7 @@ class AuthController
             ]);
         }
 
-        $userModel = new User();
-
-        if ($userModel->getByEmail($email) !== null) {
+        if ($this->userModel->getByEmail($email) !== null) {
             http_response_code(422);
 
             return new ViewModel('auth/signUp', [
@@ -99,7 +103,7 @@ class AuthController
             ]);
         }
 
-        if ($userModel->getByPersonalId($personalId) !== null) {
+        if ($this->userModel->getByPersonalId($personalId) !== null) {
             http_response_code(422);
 
             return new ViewModel('auth/signUp', [
@@ -108,7 +112,7 @@ class AuthController
             ]);
         }
 
-        $completedSignUp = $userModel->create(
+        $completedSignUp = $this->userModel->create(
             $personalId,
             $name,
             $email,
@@ -139,7 +143,7 @@ class AuthController
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        $user = (new User())->getByEmail($email);
+        $user = $this->userModel->getByEmail($email);
 
         if (
             $user === null

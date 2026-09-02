@@ -3,6 +3,10 @@
 $pageTitle ??= 'Quiz System';
 $activePage ??= '';
 $showNavigation ??= isset($_SESSION['user_id']);
+$myCoursesUrl =
+    ($_SESSION['role'] ?? '') === 'student'
+        ? '/newSummerTraining/3Project/backend/student/courses'
+        : '/newSummerTraining/3Project/backend/api/courses';
 
 
 ?>
@@ -68,7 +72,7 @@ $showNavigation ??= isset($_SESSION['user_id']);
                         class="nav-link <?= $activePage === 'courses'
                             ? 'active'
                             : '' ?>"
-                        href="/newSummerTraining/3Project/backend/api/courses">
+                        href="<?= $myCoursesUrl ?>">
                         My Courses
                     </a>
 

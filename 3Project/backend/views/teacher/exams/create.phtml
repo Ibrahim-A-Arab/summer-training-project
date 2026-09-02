@@ -26,11 +26,11 @@ $isEditing = $examId > 0;
 
 $formAction = $isEditing
     ? '/newSummerTraining/3Project/backend/teacher/exams/'
+        . 'update/'
         . (int) $examId
-        . '/update'
     : '/newSummerTraining/3Project/backend/teacher/courses/'
-        . (int) ($course['id'] ?? 0)
-        . '/exams';
+        . 'exams/create/'
+        . (int) ($course['id'] ?? 0);
 
 $cancelUrl = $isEditing
     ? '/newSummerTraining/3Project/backend/teacher/exams/'

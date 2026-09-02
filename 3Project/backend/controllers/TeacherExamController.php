@@ -17,6 +17,27 @@ use App\Utils\ViewModel;
 
 class TeacherExamController
 {
+    private Course $courseModel;
+    private CourseTeacher $courseTeacherModel;
+    private Question $questionModel;
+    private Exam $examModel;
+    private ExamQuestion $examQuestionModel;
+    private ExamResult $examResultModel;
+    private Choice $choiceModel;
+    private StudentAnswer $studentAnswerModel;
+
+    public function __construct()
+    {
+        $this->courseModel = new Course();
+        $this->courseTeacherModel = new CourseTeacher();
+        $this->questionModel = new Question();
+        $this->examModel = new Exam();
+        $this->examQuestionModel = new ExamQuestion();
+        $this->examResultModel = new ExamResult();
+        $this->choiceModel = new Choice();
+        $this->studentAnswerModel = new StudentAnswer();
+    }
+
     public function create(string $courseId): ViewModel
     {
         if (($_SESSION['role'] ?? '') !== 'teacher') {
@@ -28,7 +49,7 @@ class TeacherExamController
         $courseId = (int) $courseId;
         $teacherId = (int) $_SESSION['user_id'];
 
-        $course = (new Course())->getById($courseId);
+        $course = $this->courseModel->getById($courseId);
 
         if ($course === null) {
             http_response_code(404);
@@ -36,7 +57,7 @@ class TeacherExamController
             return new ViewModel('errors/404');
         }
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         )) {
@@ -46,41 +67,14 @@ class TeacherExamController
         }
 
 
-        $questions = (new Question())
+        $questions = $this->questionModel
             ->getByCourseId($courseId);
 
-        return new ViewModel('teacher/exams/create', [
-            'course' => $course,
-            'questions' => $questions
-        ]);
-    }
-
-    public function store(string $courseId): ViewModel
-    {
-        if (($_SESSION['role'] ?? '') !== 'teacher') {
-            http_response_code(403);
-
-            return new ViewModel('errors/403');
-        }
-
-        $courseId = (int) $courseId;
-        $teacherId = (int) $_SESSION['user_id'];
-
-        $course = (new Course())->getById($courseId);
-
-        if ($course === null) {
-            http_response_code(404);
-
-            return new ViewModel('errors/404');
-        }
-
-        if (!(new CourseTeacher())->isAssigned(
-            $courseId,
-            $teacherId
-        )) {
-            http_response_code(403);
-
-            return new ViewModel('errors/403');
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            return new ViewModel('teacher/exams/create', [
+                'course' => $course,
+                'questions' => $questions
+            ]);
         }
 
         $name = trim($_POST['exam_name'] ?? '');
@@ -88,9 +82,6 @@ class TeacherExamController
         $endInput = $_POST['end_time'] ?? '';
         $shuffle = isset($_POST['shuffle_questions']);
         $submittedQuestions = $_POST['questions'] ?? [];
-
-        $courseQuestions = (new Question())
-            ->getByCourseId($courseId);
 
         if (
             $name === ''
@@ -101,25 +92,8 @@ class TeacherExamController
 
             return new ViewModel('teacher/exams/create', [
                 'course' => $course,
-                'questions' => $courseQuestions,
+                'questions' => $questions,
                 'error' => 'Complete all exam information.',
-                'oldName' => $name,
-                'oldStartTime' => $startInput,
-                'oldEndTime' => $endInput,
-                'oldShuffle' => $shuffle
-            ]);
-        }
-
-        if (
-            !is_array($submittedQuestions)
-            || $submittedQuestions === []
-        ) {
-            http_response_code(422);
-
-            return new ViewModel('teacher/exams/create', [
-                'course' => $course,
-                'questions' => $courseQuestions,
-                'error' => 'Add at least one question.',
                 'oldName' => $name,
                 'oldStartTime' => $startInput,
                 'oldEndTime' => $endInput,
@@ -146,7 +120,7 @@ class TeacherExamController
 
             return new ViewModel('teacher/exams/create', [
                 'course' => $course,
-                'questions' => $courseQuestions,
+                'questions' => $questions,
                 'error' => 'End time must be after start time.',
                 'oldName' => $name,
                 'oldStartTime' => $startInput,
@@ -155,15 +129,16 @@ class TeacherExamController
             ]);
         }
 
-        $questionModel = new Question();
         $validatedQuestions = [];
         $position = 1;
 
         foreach ($submittedQuestions as $questionId => $data) {
+
+            
             $questionId = (int) $questionId;
             $weight = (float) ($data['weight'] ?? 0);
 
-            $question = $questionModel->getById($questionId);
+            $question = $this->questionModel->getById($questionId);
 
             if (
                 $question === null
@@ -175,7 +150,7 @@ class TeacherExamController
 
                 return new ViewModel('teacher/exams/create', [
                     'course' => $course,
-                    'questions' => $courseQuestions,
+                    'questions' => $questions,
                     'error' => 'One or more questions are invalid.',
                     'oldName' => $name,
                     'oldStartTime' => $startInput,
@@ -196,7 +171,7 @@ class TeacherExamController
         try {
             $database->beginTransaction();
 
-            $examId = (new Exam())->create(
+            $examId = $this->examModel->create(
                 $courseId,
                 $name,
                 $start->format('Y-m-d H:i:s'),
@@ -204,10 +179,9 @@ class TeacherExamController
                 $shuffle
             );
 
-            $examQuestionModel = new ExamQuestion();
 
             foreach ($validatedQuestions as $question) {
-                if (!$examQuestionModel->addQuestion(
+                if (!$this->examQuestionModel->addQuestion(
                     $examId,
                     $question['id'],
                     $question['position'],
@@ -237,6 +211,7 @@ class TeacherExamController
 
         exit;
 
+
     }
 
     public function show(string $examId): ViewModel
@@ -250,7 +225,7 @@ class TeacherExamController
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
 
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -260,7 +235,7 @@ class TeacherExamController
 
         $courseId = (int) $exam['course_id'];
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         )) {
@@ -269,7 +244,7 @@ class TeacherExamController
             return new ViewModel('errors/403');
         }
 
-        $questions = (new ExamQuestion())
+        $questions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
         $totalMarks = 0.0;
@@ -278,13 +253,13 @@ class TeacherExamController
             $totalMarks += (float) $question['weight'];
         }
 
-        $attempt = (new ExamResult())
+        $attempt = $this->examResultModel
             ->getByExamAndStudent($examId, $teacherId);
 
-        $hasAnyAttempt = (new ExamResult())
+        $hasAnyAttempt = $this->examResultModel
             ->hasAnyAttempt($examId);
 
-        $studentResults = (new ExamResult())
+        $studentResults = $this->examResultModel
             ->getStudentResultsByExam($examId);
 
         $showReview =
@@ -296,16 +271,14 @@ class TeacherExamController
         $reviewQuestions = [];
 
         if ($showReview && $attempt !== null) {
-            $choiceModel = new Choice();
-            $answerModel = new StudentAnswer();
-
+        
             foreach ($questions as $question) {
                 $questionId = (int) $question['id'];
 
-                $choices = $choiceModel
+                $choices = $this->choiceModel
                     ->getByQuestionId($questionId);
 
-                $submittedAnswers = $answerModel
+                $submittedAnswers = $this->studentAnswerModel
                     ->getByResultAndQuestion(
                         (int) $attempt['id'],
                         $questionId
@@ -317,7 +290,7 @@ class TeacherExamController
                     $submittedAnswers
                 );
 
-                $isCorrect = $answerModel->isCorrect(
+                $isCorrect = $this->studentAnswerModel->isCorrect(
                     (int) $attempt['id'],
                     $questionId
                 );
@@ -344,7 +317,7 @@ class TeacherExamController
 
         return new ViewModel('teacher/exams/show', [
             'exam' => $exam,
-            'course' => (new Course())->getById($courseId),
+            'course' => $this->courseModel->getById($courseId),
             'questions' => $questions,
             'totalMarks' => $totalMarks,
             'attempt' => $attempt,
@@ -365,7 +338,7 @@ class TeacherExamController
 
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -373,7 +346,7 @@ class TeacherExamController
             return new ViewModel('errors/404');
         }
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             (int) $exam['course_id'],
             $teacherId
         )) {
@@ -382,7 +355,7 @@ class TeacherExamController
             return new ViewModel('errors/403');
         }
 
-        if ((new ExamResult())->getByExamAndStudent(
+        if ($this->examResultModel->getByExamAndStudent(
             $examId,
             $teacherId
         ) !== null) {
@@ -391,13 +364,11 @@ class TeacherExamController
             return new ViewModel('errors/403');
         }
 
-        $questions = (new ExamQuestion())
+        $questions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
-        $choiceModel = new Choice();
-
         foreach ($questions as &$question) {
-            $question['choices'] = $choiceModel
+            $question['choices'] = $this->choiceModel
                 ->getByQuestionId((int) $question['id']);
         }
 
@@ -412,8 +383,8 @@ class TeacherExamController
             'questions' => $questions,
             'formAction' =>
                 '/newSummerTraining/3Project/backend/teacher/exams/'
-                . $examId
-                . '/test',
+                . 'test/'
+                . $examId,
             'pageHeading' => 'Test Exam',
             'introText' =>
                 'Complete this exam as a teacher test attempt.',
@@ -430,14 +401,14 @@ class TeacherExamController
 
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
             exit;
         }
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             (int) $exam['course_id'],
             $teacherId
         )) {
@@ -445,9 +416,8 @@ class TeacherExamController
             exit;
         }
 
-        $resultModel = new ExamResult();
 
-        if ($resultModel->getByExamAndStudent(
+        if ($this->examResultModel->getByExamAndStudent(
             $examId,
             $teacherId
         ) !== null) {
@@ -461,16 +431,16 @@ class TeacherExamController
             $submittedAnswers = [];
         }
 
-        $questions = (new ExamQuestion())
+        $questions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
         $database = Database::getInstance();
-        $answerModel = new StudentAnswer();
+
 
         try {
             $database->beginTransaction();
 
-            $resultId = $resultModel->create(
+            $resultId = $this->examResultModel->create(
                 $examId,
                 $teacherId
             );
@@ -492,7 +462,7 @@ class TeacherExamController
                         continue;
                     }
 
-                    if ($answerModel->create(
+                    if ($this->studentAnswerModel->create(
                         $resultId,
                         $questionId,
                         $choiceId
@@ -507,7 +477,7 @@ class TeacherExamController
             $mark = 0.0;
 
             foreach ($questions as $question) {
-                if ($answerModel->isCorrect(
+                if ($this->studentAnswerModel->isCorrect(
                     $resultId,
                     (int) $question['id']
                 )) {
@@ -515,7 +485,7 @@ class TeacherExamController
                 }
             }
 
-            if (!$resultModel->submit($resultId, $mark)) {
+            if (!$this->examResultModel->submit($resultId, $mark)) {
                 throw new \RuntimeException(
                     'The exam could not be submitted.'
                 );
@@ -554,7 +524,7 @@ class TeacherExamController
 
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -564,7 +534,7 @@ class TeacherExamController
 
         $courseId = (int) $exam['course_id'];
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         )) {
@@ -578,16 +548,16 @@ class TeacherExamController
 
         if (
             $now >= $start
-            || (new ExamResult())->hasAnyAttempt($examId)
+            || $this->examResultModel->hasAnyAttempt($examId)
         ) {
             http_response_code(403);
 
             return new ViewModel('errors/403');
         }
 
-        $course = (new Course())->getById($courseId);
-        $questions = (new Question())->getByCourseId($courseId);
-        $selectedQuestions = (new ExamQuestion())
+        $course = $this->courseModel->getById($courseId);
+        $questions = $this->questionModel->getByCourseId($courseId);
+        $selectedQuestions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
         return new ViewModel('teacher/exams/create', [
@@ -616,7 +586,7 @@ class TeacherExamController
 
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -626,7 +596,7 @@ class TeacherExamController
 
         $courseId = (int) $exam['course_id'];
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         )) {
@@ -640,7 +610,7 @@ class TeacherExamController
 
         if (
             $now >= $currentStart
-            || (new ExamResult())->hasAnyAttempt($examId)
+            || $this->examResultModel->hasAnyAttempt($examId)
         ) {
             http_response_code(403);
 
@@ -665,8 +635,8 @@ class TeacherExamController
             $timezone
         );
 
-        $course = (new Course())->getById($courseId);
-        $courseQuestions = (new Question())
+        $course = $this->courseModel->getById($courseId);
+        $courseQuestions = $this->questionModel
             ->getByCourseId($courseId);
 
         if (
@@ -684,7 +654,7 @@ class TeacherExamController
                 'course' => $course,
                 'questions' => $courseQuestions,
                 'exam' => $exam,
-                'selectedQuestions' => (new ExamQuestion())
+                'selectedQuestions' => $this->examQuestionModel
                     ->getQuestionsByExam($examId),
                 'error' =>
                     'Complete the exam correctly and add at least one question.',
@@ -695,14 +665,14 @@ class TeacherExamController
             ]);
         }
 
-        $questionModel = new Question();
         $validatedQuestions = [];
         $position = 1;
 
         foreach ($submittedQuestions as $questionId => $data) {
+                        
             $questionId = (int) $questionId;
             $weight = (float) ($data['weight'] ?? 0);
-            $question = $questionModel->getById($questionId);
+            $question = $this->questionModel->getById($questionId);
 
             if (
                 $question === null
@@ -716,7 +686,7 @@ class TeacherExamController
                     'course' => $course,
                     'questions' => $courseQuestions,
                     'exam' => $exam,
-                    'selectedQuestions' => (new ExamQuestion())
+                    'selectedQuestions' => $this->examQuestionModel
                         ->getQuestionsByExam($examId),
                     'error' => 'One or more questions are invalid.',
                     'oldName' => $name,
@@ -734,12 +704,11 @@ class TeacherExamController
         }
 
         $database = Database::getInstance();
-        $examQuestionModel = new ExamQuestion();
 
         try {
             $database->beginTransaction();
 
-            (new Exam())->update(
+            $this->examModel->update(
                 $examId,
                 $name,
                 $start->format('Y-m-d H:i:s'),
@@ -747,10 +716,10 @@ class TeacherExamController
                 $shuffle
             );
 
-            $examQuestionModel->removeAllByExam($examId);
+            $this->examQuestionModel->removeAllByExam($examId);
 
             foreach ($validatedQuestions as $question) {
-                if (!$examQuestionModel->addQuestion(
+                if (!$this->examQuestionModel->addQuestion(
                     $examId,
                     $question['id'],
                     $question['position'],
@@ -790,7 +759,7 @@ class TeacherExamController
 
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
-        $exam = (new Exam())->getById($examId);
+        $exam = $this->examModel->getById($examId);
 
         if ($exam === null) {
             http_response_code(404);
@@ -799,7 +768,7 @@ class TeacherExamController
 
         $courseId = (int) $exam['course_id'];
 
-        if (!(new CourseTeacher())->isAssigned(
+        if (!$this->courseTeacherModel->isAssigned(
             $courseId,
             $teacherId
         )) {
@@ -812,13 +781,13 @@ class TeacherExamController
 
         if (
             $now >= $start
-            || (new ExamResult())->hasAnyAttempt($examId)
+            || $this->examResultModel->hasAnyAttempt($examId)
         ) {
             http_response_code(403);
             exit;
         }
 
-        (new Exam())->delete($examId);
+        $this->examModel->delete($examId);
 
         header(
             'Location: /newSummerTraining/3Project/backend/teacher/courses/'

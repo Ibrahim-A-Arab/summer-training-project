@@ -51,22 +51,22 @@ Router::post(
 );
 
 Router::get(
-    '/api/courses/{courseId}/questions',
+    '/api/courses/questions/{courseId}',
     ['QuestionController', 'getByCourse']
 );
 
 Router::get(
-    '/api/courses/{courseId}/questions/create',
+    '/api/courses/questions/create/{courseId}',
     ['QuestionController', 'create']
 );
 
 Router::post(
-    '/api/courses/{courseId}/questions',
+    '/api/courses/questions/{courseId}',
     ['QuestionController', 'store']
 );
 
 Router::get(
-    '/api/questions/{id}/edit',
+    '/api/questions/edit/{id}',
     ['QuestionController', 'edit']
 );
 
@@ -76,12 +76,12 @@ Router::get(
 );
 
 Router::post(
-    '/api/questions/{id}/update',
+    '/api/questions/update/{id}',
     ['QuestionController', 'update']
 );
 
 Router::post(
-    '/api/questions/{id}/delete',
+    '/api/questions/delete/{id}',
     ['QuestionController', 'delete']
 );
 
@@ -96,7 +96,7 @@ Router::get(
 );
 
 Router::post(
-    '/student/courses/{courseId}/enroll',
+    '/student/courses/enroll/{courseId}',
     ['StudentCourseController', 'enroll']
 );
 
@@ -111,7 +111,7 @@ Router::get(
 );
 
 Router::post(
-    '/student/exams/{examId}/submit',
+    '/student/exams/submit/{examId}',
     ['StudentExamController', 'submit']
 );
 
@@ -126,18 +126,18 @@ Router::get(
 );
 
 Router::post(
-    '/teacher/courses/{courseId}/co-teach',
+    '/teacher/courses/co-teach/{courseId}',
     ['TeacherCourseController', 'coTeach']
 );
 
 Router::get(
-    '/teacher/courses/{courseId}/exams/create',
+    '/teacher/courses/exams/create/{courseId}',
     ['TeacherExamController', 'create']
 );
 
 Router::post(
-    '/teacher/courses/{courseId}/exams',
-    ['TeacherExamController', 'store']
+    '/teacher/courses/exams/create/{courseId}',
+    ['TeacherExamController', 'create']
 );
 
 Router::get(
@@ -146,26 +146,26 @@ Router::get(
 );
 
 Router::get(
-    '/teacher/exams/{examId}/test',
+    '/teacher/exams/test/{examId}',
     ['TeacherExamController', 'test']
 );
 
 Router::post(
-    '/teacher/exams/{examId}/test',
+    '/teacher/exams/test/{examId}',
     ['TeacherExamController', 'submitTest']
 );
 
 Router::get(
-    '/teacher/exams/{examId}/edit',
+    '/teacher/exams/edit/{examId}',
     ['TeacherExamController', 'edit']
 );
 
 Router::post(
-    '/teacher/exams/{examId}/update',
+    '/teacher/exams/update/{examId}',
     ['TeacherExamController', 'update']
 );
 
 Router::post(
-    '/teacher/exams/{examId}/delete',
+    '/teacher/exams/delete/{examId}',
     ['TeacherExamController', 'delete']
 );

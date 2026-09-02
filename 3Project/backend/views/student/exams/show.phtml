@@ -9,8 +9,8 @@ if (!isset($exam) || !is_array($exam)) {
 $questions ??= [];
 $formAction ??=
     '/newSummerTraining/3Project/backend/student/exams/'
-    . (int) $exam['id']
-    . '/submit';
+    . 'submit/'
+    . (int) $exam['id'];
 $pageHeading ??= $exam['exam_name'];
 $introText ??= 'Answer every question before submitting.';
 $statusLabel ??= 'Exam available';
