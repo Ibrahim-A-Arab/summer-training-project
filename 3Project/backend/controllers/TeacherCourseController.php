@@ -61,6 +61,12 @@ class TeacherCourseController
         $exams = $this->examModel
             ->getByCourseId($courseId);
 
+        foreach ($exams as &$exam) {
+            $exam['status'] = $this->examModel->getStatus($exam);
+        }
+
+        unset($exam);
+
         return new ViewModel('teacher/courses/show', [
             'course' => $course,
             'students' => $students,
@@ -87,7 +93,7 @@ class TeacherCourseController
         }
 
 
-        if (!$this->courseTeacherModel->isAssigned(
+        if ($this->courseTeacherModel->canAssign(
             $courseId,
             $teacherId
         )) {

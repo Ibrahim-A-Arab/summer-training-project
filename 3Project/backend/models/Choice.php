@@ -50,6 +50,99 @@ class Choice
         );
     }
 
+    public function validateForQuestionType(
+        string $questionType,
+        mixed $submittedChoices,
+        mixed $correctAnswer = null
+    ): array {
+        if ($questionType === 'TrueOrFalse') {
+            if (!in_array(
+                $correctAnswer,
+                ['true', 'false'],
+                true
+            )) {
+                return [
+                    'valid' => false,
+                    'error' => 'Select True or False.'
+                ];
+            }
+
+            return [
+                'valid' => true,
+                'choices' => [
+                    [
+                        'text' => 'True',
+                        'is_correct' => $correctAnswer === 'true'
+                    ],
+                    [
+                        'text' => 'False',
+                        'is_correct' => $correctAnswer === 'false'
+                    ]
+                ]
+            ];
+        }
+
+        if ($questionType !== 'MCQ') {
+            return [
+                'valid' => false,
+                'error' => 'Select a valid question type.'
+            ];
+        }
+
+        if (
+            !is_array($submittedChoices)
+            || count($submittedChoices) < 2
+        ) {
+            return [
+                'valid' => false,
+                'error' => 'At least two choices are required.'
+            ];
+        }
+
+        $choices = [];
+        $hasCorrectChoice = false;
+
+        foreach ($submittedChoices as $choice) {
+            if (!is_array($choice)) {
+                return [
+                    'valid' => false,
+                    'error' => 'Invalid choice data.'
+                ];
+            }
+
+            $choiceText = trim(
+                (string) ($choice['text'] ?? '')
+            );
+
+            if ($choiceText === '') {
+                return [
+                    'valid' => false,
+                    'error' => 'Choice text cannot be empty.'
+                ];
+            }
+
+            $isCorrect = isset($choice['correct']);
+            $hasCorrectChoice = $hasCorrectChoice || $isCorrect;
+
+            $choices[] = [
+                'text' => $choiceText,
+                'is_correct' => $isCorrect
+            ];
+        }
+
+        if (!$hasCorrectChoice) {
+            return [
+                'valid' => false,
+                'error' => 'Select at least one correct choice.'
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'choices' => $choices
+        ];
+    }
+
     public function create(
         int $questionId,
         string $text,

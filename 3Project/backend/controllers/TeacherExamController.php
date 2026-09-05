@@ -12,7 +12,6 @@ use App\Models\ExamQuestion;
 use App\Models\ExamResult;
 use App\Models\Question;
 use App\Models\StudentAnswer;
-use App\Utils\Database;
 use App\Utils\ViewModel;
 
 class TeacherExamController
@@ -77,130 +76,48 @@ class TeacherExamController
             ]);
         }
 
-        $name = trim($_POST['exam_name'] ?? '');
-        $startInput = $_POST['start_time'] ?? '';
-        $endInput = $_POST['end_time'] ?? '';
-        $shuffle = isset($_POST['shuffle_questions']);
+        $input = [
+            'name' => $_POST['exam_name'] ?? '',
+            'start_time' => $_POST['start_time'] ?? '',
+            'end_time' => $_POST['end_time'] ?? '',
+            'shuffle' => isset($_POST['shuffle_questions'])
+        ];
+
         $submittedQuestions = $_POST['questions'] ?? [];
+        $validation = $this->examModel->validate($input);
+        $selectionValidation = $this->examQuestionModel
+            ->validateSelection(
+                $courseId,
+                $submittedQuestions,
+                $this->questionModel
+            );
 
         if (
-            $name === ''
-            || $startInput === ''
-            || $endInput === ''
+            !$validation['valid']
+            || !$selectionValidation['valid']
         ) {
             http_response_code(422);
 
             return new ViewModel('teacher/exams/create', [
                 'course' => $course,
                 'questions' => $questions,
-                'error' => 'Complete all exam information.',
-                'oldName' => $name,
-                'oldStartTime' => $startInput,
-                'oldEndTime' => $endInput,
-                'oldShuffle' => $shuffle
+                'error' => $validation['error']
+                    ?? $selectionValidation['error'],
+                'oldName' => $input['name'],
+                'oldStartTime' => $input['start_time'],
+                'oldEndTime' => $input['end_time'],
+                'oldShuffle' => $input['shuffle']
             ]);
         }
 
-        $timezone = new \DateTimeZone('Asia/Jerusalem');
+        $examData = $validation['data'];
+        $validatedQuestions = $selectionValidation['questions'];
 
-        $start = \DateTimeImmutable::createFromFormat(
-            'Y-m-d\TH:i',
-            $startInput,
-            $timezone
+        $examId = $this->examModel->createWithQuestions(
+            $courseId,
+            $examData,
+            $validatedQuestions
         );
-
-        $end = \DateTimeImmutable::createFromFormat(
-            'Y-m-d\TH:i',
-            $endInput,
-            $timezone
-        );
-
-        if ($start === false || $end === false || $end <= $start) {
-            http_response_code(422);
-
-            return new ViewModel('teacher/exams/create', [
-                'course' => $course,
-                'questions' => $questions,
-                'error' => 'End time must be after start time.',
-                'oldName' => $name,
-                'oldStartTime' => $startInput,
-                'oldEndTime' => $endInput,
-                'oldShuffle' => $shuffle
-            ]);
-        }
-
-        $validatedQuestions = [];
-        $position = 1;
-
-        foreach ($submittedQuestions as $questionId => $data) {
-
-            
-            $questionId = (int) $questionId;
-            $weight = (float) ($data['weight'] ?? 0);
-
-            $question = $this->questionModel->getById($questionId);
-
-            if (
-                $question === null
-                || (int) $question['course_id'] !== $courseId
-                || $weight <= 0
-                || $weight > 100
-            ) {
-                http_response_code(422);
-
-                return new ViewModel('teacher/exams/create', [
-                    'course' => $course,
-                    'questions' => $questions,
-                    'error' => 'One or more questions are invalid.',
-                    'oldName' => $name,
-                    'oldStartTime' => $startInput,
-                    'oldEndTime' => $endInput,
-                    'oldShuffle' => $shuffle
-                ]);
-            }
-
-            $validatedQuestions[] = [
-                'id' => $questionId,
-                'weight' => $weight,
-                'position' => $position++
-            ];
-        }
-
-        $database = Database::getInstance();
-
-        try {
-            $database->beginTransaction();
-
-            $examId = $this->examModel->create(
-                $courseId,
-                $name,
-                $start->format('Y-m-d H:i:s'),
-                $end->format('Y-m-d H:i:s'),
-                $shuffle
-            );
-
-
-            foreach ($validatedQuestions as $question) {
-                if (!$this->examQuestionModel->addQuestion(
-                    $examId,
-                    $question['id'],
-                    $question['position'],
-                    $question['weight']
-                )) {
-                    throw new \RuntimeException(
-                        'Could not add question to exam.'
-                    );
-                }
-            }
-
-            $database->commit();
-        } catch (\Throwable $exception) {
-            if ($database->inTransaction()) {
-                $database->rollBack();
-            }
-
-            throw $exception;
-        }
 
         header(
             'Location: /newSummerTraining/3Project/backend/teacher/courses/'
@@ -257,7 +174,7 @@ class TeacherExamController
             ->getByExamAndStudent($examId, $teacherId);
 
         $hasAnyAttempt = $this->examResultModel
-            ->hasAnyAttempt($examId);
+            ->hasAnyStudentAttempt($examId);
 
         $studentResults = $this->examResultModel
             ->getStudentResultsByExam($examId);
@@ -339,6 +256,7 @@ class TeacherExamController
         $examId = (int) $examId;
         $teacherId = (int) $_SESSION['user_id'];
         $exam = $this->examModel->getById($examId);
+        
 
         if ($exam === null) {
             http_response_code(404);
@@ -355,10 +273,10 @@ class TeacherExamController
             return new ViewModel('errors/403');
         }
 
-        if ($this->examResultModel->getByExamAndStudent(
+        if (!$this->examResultModel->canCreateAttempt(
             $examId,
             $teacherId
-        ) !== null) {
+        )) {
             http_response_code(403);
 
             return new ViewModel('errors/403');
@@ -378,44 +296,20 @@ class TeacherExamController
             shuffle($questions);
         }
 
-        return new ViewModel('student/exams/show', [
-            'exam' => $exam,
-            'questions' => $questions,
-            'formAction' =>
-                '/newSummerTraining/3Project/backend/teacher/exams/'
-                . 'test/'
-                . $examId,
-            'pageHeading' => 'Test Exam',
-            'introText' =>
-                'Complete this exam as a teacher test attempt.',
-            'statusLabel' => 'Teacher test'
-        ]);
-    }
-
-    public function submitTest(string $examId): never
-    {
-        if (($_SESSION['role'] ?? '') !== 'teacher') {
-            http_response_code(403);
-            exit;
+        if($_SERVER['REQUEST_METHOD'] === 'GET'){
+            return new ViewModel('student/exams/show', [
+                'exam' => $exam,
+                'questions' => $questions,
+                'formAction' =>
+                    '/newSummerTraining/3Project/backend/teacher/exams/'
+                    . 'test/'
+                    . $examId,
+                'pageHeading' => 'Test Exam',
+                'introText' =>
+                    'Complete this exam as a teacher test attempt.',
+                'statusLabel' => 'Teacher test'
+            ]);
         }
-
-        $examId = (int) $examId;
-        $teacherId = (int) $_SESSION['user_id'];
-        $exam = $this->examModel->getById($examId);
-
-        if ($exam === null) {
-            http_response_code(404);
-            exit;
-        }
-
-        if (!$this->courseTeacherModel->isAssigned(
-            (int) $exam['course_id'],
-            $teacherId
-        )) {
-            http_response_code(403);
-            exit;
-        }
-
 
         if ($this->examResultModel->getByExamAndStudent(
             $examId,
@@ -427,76 +321,17 @@ class TeacherExamController
 
         $submittedAnswers = $_POST['answers'] ?? [];
 
-        if (!is_array($submittedAnswers)) {
-            $submittedAnswers = [];
-        }
-
         $questions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
-        $database = Database::getInstance();
-
-
         try {
-            $database->beginTransaction();
-
-            $resultId = $this->examResultModel->create(
+            $this->examResultModel->submitAttempt(
                 $examId,
-                $teacherId
+                $teacherId,
+                $questions,
+                $submittedAnswers
             );
-
-            foreach ($questions as $question) {
-                $questionId = (int) $question['id'];
-                $choiceIds = $submittedAnswers[$questionId] ?? [];
-
-                if (!is_array($choiceIds)) {
-                    $choiceIds = [$choiceIds];
-                }
-
-                $choiceIds = array_unique(
-                    array_map('intval', $choiceIds)
-                );
-
-                foreach ($choiceIds as $choiceId) {
-                    if ($choiceId <= 0) {
-                        continue;
-                    }
-
-                    if ($this->studentAnswerModel->create(
-                        $resultId,
-                        $questionId,
-                        $choiceId
-                    ) === null) {
-                        throw new \RuntimeException(
-                            'An invalid answer was submitted.'
-                        );
-                    }
-                }
-            }
-
-            $mark = 0.0;
-
-            foreach ($questions as $question) {
-                if ($this->studentAnswerModel->isCorrect(
-                    $resultId,
-                    (int) $question['id']
-                )) {
-                    $mark += (float) $question['weight'];
-                }
-            }
-
-            if (!$this->examResultModel->submit($resultId, $mark)) {
-                throw new \RuntimeException(
-                    'The exam could not be submitted.'
-                );
-            }
-
-            $database->commit();
         } catch (\Throwable $exception) {
-            if ($database->inTransaction()) {
-                $database->rollBack();
-            }
-
             error_log($exception->__toString());
             http_response_code(500);
             exit;
@@ -513,6 +348,8 @@ class TeacherExamController
 
         exit;
     }
+
+
 
     public function edit(string $examId): ViewModel
     {
@@ -543,13 +380,10 @@ class TeacherExamController
             return new ViewModel('errors/403');
         }
 
-        $now = new \DateTimeImmutable();
-        $start = new \DateTimeImmutable($exam['start_time']);
-
-        if (
-            $now >= $start
-            || $this->examResultModel->hasAnyAttempt($examId)
-        ) {
+        if (!$this->examModel->canModify(
+            $exam,
+            $this->examResultModel->hasAnyStudentAttempt($examId)
+        )) {
             http_response_code(403);
 
             return new ViewModel('errors/403');
@@ -560,7 +394,8 @@ class TeacherExamController
         $selectedQuestions = $this->examQuestionModel
             ->getQuestionsByExam($examId);
 
-        return new ViewModel('teacher/exams/create', [
+        if($_SERVER['REQUEST_METHOD'] === 'GET'){
+            return new ViewModel('teacher/exams/create', [
             'course' => $course,
             'questions' => $questions,
             'exam' => $exam,
@@ -573,80 +408,31 @@ class TeacherExamController
                 $exam['end_time']
             ))->format('Y-m-d\TH:i'),
             'oldShuffle' => (bool) $exam['shuffle_questions']
-        ]);
-    }
-
-    public function update(string $examId): ViewModel
-    {
-        if (($_SESSION['role'] ?? '') !== 'teacher') {
-            http_response_code(403);
-
-            return new ViewModel('errors/403');
+            ]);
         }
 
-        $examId = (int) $examId;
-        $teacherId = (int) $_SESSION['user_id'];
-        $exam = $this->examModel->getById($examId);
+        $input = [
+            'name' => trim($_POST['exam_name'] ?? ''),
+            'start_time' => $_POST['start_time'] ?? '',
+            'end_time' => $_POST['end_time'] ?? '',
+            'shuffle' => isset($_POST['shuffle_questions'])
+        ];
 
-        if ($exam === null) {
-            http_response_code(404);
+        $validation = $this->examModel->validate($input);
 
-            return new ViewModel('errors/404');
-        }
-
-        $courseId = (int) $exam['course_id'];
-
-        if (!$this->courseTeacherModel->isAssigned(
-            $courseId,
-            $teacherId
-        )) {
-            http_response_code(403);
-
-            return new ViewModel('errors/403');
-        }
-
-        $now = new \DateTimeImmutable();
-        $currentStart = new \DateTimeImmutable($exam['start_time']);
-
-        if (
-            $now >= $currentStart
-            || $this->examResultModel->hasAnyAttempt($examId)
-        ) {
-            http_response_code(403);
-
-            return new ViewModel('errors/403');
-        }
-
-        $name = trim($_POST['exam_name'] ?? '');
-        $startInput = $_POST['start_time'] ?? '';
-        $endInput = $_POST['end_time'] ?? '';
-        $shuffle = isset($_POST['shuffle_questions']);
         $submittedQuestions = $_POST['questions'] ?? [];
-
-        $timezone = new \DateTimeZone('Asia/Jerusalem');
-        $start = \DateTimeImmutable::createFromFormat(
-            'Y-m-d\TH:i',
-            $startInput,
-            $timezone
-        );
-        $end = \DateTimeImmutable::createFromFormat(
-            'Y-m-d\TH:i',
-            $endInput,
-            $timezone
-        );
-
-        $course = $this->courseModel->getById($courseId);
         $courseQuestions = $this->questionModel
             ->getByCourseId($courseId);
+        $selectionValidation = $this->examQuestionModel
+            ->validateSelection(
+                $courseId,
+                $submittedQuestions,
+                $this->questionModel
+            );
 
         if (
-            $name === ''
-            || $start === false
-            || $end === false
-            || $start <= new \DateTimeImmutable('now', $timezone)
-            || $end <= $start
-            || !is_array($submittedQuestions)
-            || $submittedQuestions === []
+            !$validation['valid']
+            || !$selectionValidation['valid']
         ) {
             http_response_code(422);
 
@@ -656,89 +442,23 @@ class TeacherExamController
                 'exam' => $exam,
                 'selectedQuestions' => $this->examQuestionModel
                     ->getQuestionsByExam($examId),
-                'error' =>
-                    'Complete the exam correctly and add at least one question.',
-                'oldName' => $name,
-                'oldStartTime' => $startInput,
-                'oldEndTime' => $endInput,
-                'oldShuffle' => $shuffle
+                'error' => $validation['error']
+                    ?? $selectionValidation['error'],
+                'oldName' => $input['name'],
+                'oldStartTime' => $input['start_time'],
+                'oldEndTime' => $input['end_time'],
+                'oldShuffle' => $input['shuffle']
             ]);
         }
 
-        $validatedQuestions = [];
-        $position = 1;
+        $examData = $validation['data'];
+        $validatedQuestions = $selectionValidation['questions'];
 
-        foreach ($submittedQuestions as $questionId => $data) {
-                        
-            $questionId = (int) $questionId;
-            $weight = (float) ($data['weight'] ?? 0);
-            $question = $this->questionModel->getById($questionId);
-
-            if (
-                $question === null
-                || (int) $question['course_id'] !== $courseId
-                || $weight <= 0
-                || $weight > 100
-            ) {
-                http_response_code(422);
-
-                return new ViewModel('teacher/exams/create', [
-                    'course' => $course,
-                    'questions' => $courseQuestions,
-                    'exam' => $exam,
-                    'selectedQuestions' => $this->examQuestionModel
-                        ->getQuestionsByExam($examId),
-                    'error' => 'One or more questions are invalid.',
-                    'oldName' => $name,
-                    'oldStartTime' => $startInput,
-                    'oldEndTime' => $endInput,
-                    'oldShuffle' => $shuffle
-                ]);
-            }
-
-            $validatedQuestions[] = [
-                'id' => $questionId,
-                'weight' => $weight,
-                'position' => $position++
-            ];
-        }
-
-        $database = Database::getInstance();
-
-        try {
-            $database->beginTransaction();
-
-            $this->examModel->update(
-                $examId,
-                $name,
-                $start->format('Y-m-d H:i:s'),
-                $end->format('Y-m-d H:i:s'),
-                $shuffle
-            );
-
-            $this->examQuestionModel->removeAllByExam($examId);
-
-            foreach ($validatedQuestions as $question) {
-                if (!$this->examQuestionModel->addQuestion(
-                    $examId,
-                    $question['id'],
-                    $question['position'],
-                    $question['weight']
-                )) {
-                    throw new \RuntimeException(
-                        'Could not update the exam questions.'
-                    );
-                }
-            }
-
-            $database->commit();
-        } catch (\Throwable $exception) {
-            if ($database->inTransaction()) {
-                $database->rollBack();
-            }
-
-            throw $exception;
-        }
+        $this->examModel->updateWithQuestions(
+            $examId,
+            $examData,
+            $validatedQuestions
+        );
 
         header(
             'Location: /newSummerTraining/3Project/backend/teacher/exams/'
@@ -749,6 +469,8 @@ class TeacherExamController
 
         exit;
     }
+
+
 
     public function delete(string $examId): never
     {
@@ -776,13 +498,10 @@ class TeacherExamController
             exit;
         }
 
-        $now = new \DateTimeImmutable();
-        $start = new \DateTimeImmutable($exam['start_time']);
-
-        if (
-            $now >= $start
-            || $this->examResultModel->hasAnyAttempt($examId)
-        ) {
+        if (!$this->examModel->canModify(
+            $exam,
+            $this->examResultModel->hasAnyStudentAttempt($examId)
+        )) {
             http_response_code(403);
             exit;
         }

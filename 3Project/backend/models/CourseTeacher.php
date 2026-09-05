@@ -58,6 +58,11 @@ class CourseTeacher
         ) !== [];// checks that the query returned 1 row atleast 
     }
 
+    public function canAssign(int $courseId, int $teacherId): bool
+    {
+        return !$this->isAssigned($courseId, $teacherId);
+    }
+
     public function getAvailableCourses(
         int $teacherId,
         string $search = ''

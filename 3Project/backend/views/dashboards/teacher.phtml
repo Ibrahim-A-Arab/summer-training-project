@@ -1,6 +1,8 @@
 <?php
 
 $name ??= '';
+$courseCount ??= 0;
+$examCount ??= 0;
 
 $pageTitle = 'Teacher Dashboard';
 $activePage = 'dashboard';
@@ -25,6 +27,10 @@ require __DIR__ . '/../partials/header.phtml';
                 <div class="card-body">
                     <h2 class="h5">Courses</h2>
 
+                    <p class="display-6 fw-bold mb-2">
+                        <?= $courseCount ?>
+                    </p>
+
                     <p class="text-body-secondary">
                         Manage your courses and their questions.
                     </p>
@@ -42,17 +48,21 @@ require __DIR__ . '/../partials/header.phtml';
         <div class="col-md-6">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h2 class="h5">Create course</h2>
+                    <h2 class="h5">Exams</h2>
+
+                    <p class="display-6 fw-bold mb-2">
+                        <?= $examCount ?>
+                    </p>
 
                     <p class="text-body-secondary">
-                        Create a new course.
+                        Exams across your courses.
                     </p>
 
                     <a
                         class="btn btn-outline-primary"
-                        href="/newSummerTraining/3Project/backend/api/courses/create"
+                        href="/newSummerTraining/3Project/backend/api/courses"
                     >
-                        Add course
+                        View course exams
                     </a>
                 </div>
             </div>

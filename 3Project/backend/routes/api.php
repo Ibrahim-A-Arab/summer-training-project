@@ -47,7 +47,7 @@ Router::get(
 
 Router::post(
     '/api/courses',
-    ['CourseController', 'store']
+    ['CourseController', 'create']
 );
 
 Router::get(
@@ -62,7 +62,7 @@ Router::get(
 
 Router::post(
     '/api/courses/questions/{courseId}',
-    ['QuestionController', 'store']
+    ['QuestionController', 'create']
 );
 
 Router::get(
@@ -161,8 +161,8 @@ Router::get(
 );
 
 Router::post(
-    '/teacher/exams/update/{examId}',
-    ['TeacherExamController', 'update']
+    '/teacher/exams/edit/{examId}',
+    ['TeacherExamController', 'edit']
 );
 
 Router::post(

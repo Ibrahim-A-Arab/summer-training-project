@@ -55,6 +55,61 @@ class ExamQuestion
         );
     }
 
+    public function validateSelection(
+        int $courseId,
+        mixed $submittedQuestions,
+        Question $questionModel
+    ): array {
+        if (
+            !is_array($submittedQuestions)
+            || $submittedQuestions === []
+        ) {
+            return [
+                'valid' => false,
+                'error' => 'Add at least one question.'
+            ];
+        }
+
+        $questions = [];
+        $position = 1;
+
+        foreach ($submittedQuestions as $questionId => $data) {
+            if (!is_array($data)) {
+                return [
+                    'valid' => false,
+                    'error' => 'One or more questions are invalid.'
+                ];
+            }
+
+            $questionId = (int) $questionId;
+            $weight = (float) ($data['weight'] ?? 0);
+            $question = $questionModel->getById($questionId);
+
+            if (
+                $question === null
+                || (int) $question['course_id'] !== $courseId
+                || $weight <= 0
+                || $weight > 100
+            ) {
+                return [
+                    'valid' => false,
+                    'error' => 'One or more questions are invalid.'
+                ];
+            }
+
+            $questions[] = [
+                'id' => $questionId,
+                'weight' => $weight,
+                'position' => $position++
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'questions' => $questions
+        ];
+    }
+
     public function removeAllByExam(int $examId): bool
     {
         return $this->db->execute(

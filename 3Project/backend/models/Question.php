@@ -49,6 +49,37 @@ class Question
         return $this->getById($id) !== null;
     }
 
+    public function validate(
+        string $questionText,
+        string $questionType
+    ): array {
+        $questionText = trim($questionText);
+
+        if ($questionText === '') {
+            return [
+                'valid' => false,
+                'error' => 'Question is required.'
+            ];
+        }
+
+        if (!in_array(
+            $questionType,
+            ['MCQ', 'TrueOrFalse'],
+            true
+        )) {
+            return [
+                'valid' => false,
+                'error' => 'Select a valid question type.'
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'question_text' => $questionText,
+            'question_type' => $questionType
+        ];
+    }
+
 
     public function create(
         int $courseId,
@@ -75,22 +106,109 @@ class Question
         return $this->db->lastInsertId();
     }
 
+    public function createWithChoices(
+        int $courseId,
+        string $questionText,
+        string $questionType,
+        array $choices
+    ): int {
+        $choiceModel = new Choice();
+
+        try {
+            $this->db->beginTransaction();
+
+            $questionId = $this->create(
+                $courseId,
+                $questionText,
+                $questionType
+            );
+
+            foreach ($choices as $choice) {
+                $choiceModel->create(
+                    $questionId,
+                    $choice['text'],
+                    $choice['is_correct']
+                );
+            }
+
+            $this->db->commit();
+
+            return $questionId;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function update(
         int $id,
         int $courseId,
         string $questionText,
+        string $questionType
     ): bool {
         return $this->db->execute(
             'UPDATE questions
             SET course_id = :course_id,
-                question_text = :question_text
+                question_text = :question_text,
+                question_type = :question_type
             WHERE id = :id',
             [
                 'id' => $id,
                 'course_id' => $courseId,
-                'question_text' => $questionText
+                'question_text' => $questionText,
+                'question_type' => $questionType
             ]
         );
+    }
+
+    public function updateWithChoices(
+        int $id,
+        int $courseId,
+        string $questionText,
+        string $questionType,
+        array $choices
+    ): bool {
+        $choiceModel = new Choice();
+
+        try {
+            $this->db->beginTransaction();
+
+            if (!$this->update(
+                $id,
+                $courseId,
+                $questionText,
+                $questionType
+            )) {
+                throw new \RuntimeException('Could not update question.');
+            }
+
+            if (!$choiceModel->deleteByQuestionId($id)) {
+                throw new \RuntimeException(
+                    'Could not replace question choices.'
+                );
+            }
+
+            foreach ($choices as $choice) {
+                $choiceModel->create(
+                    $id,
+                    $choice['text'],
+                    $choice['is_correct']
+                );
+            }
+
+            $this->db->commit();
+
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function delete(int $id): bool
@@ -113,5 +231,10 @@ class Question
                 'question_id' => $id
             ]
         ) !== [];
+    }
+
+    public function canModify(int $id): bool
+    {
+        return !$this->isUsedInExam($id);
     }
 }

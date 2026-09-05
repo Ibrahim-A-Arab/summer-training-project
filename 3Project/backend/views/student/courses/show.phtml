@@ -65,25 +65,7 @@ require __DIR__ . '/../../partials/header.phtml';
 
                     <?php foreach ($exams as $exam): ?>
                         <?php
-                            $now = new DateTimeImmutable();
-                            $start = new DateTimeImmutable($exam['start_time']);
-                            $end = new DateTimeImmutable($exam['end_time']);
-
-                            if ($now < $start) {
-                                $status = 'upcoming';
-                                $statusClass = 'text-bg-warning';
-                                $statusLabel = 'Upcoming';
-                            } elseif ($now <= $end) {
-                                $status = 'available';
-                                $statusClass = 'text-bg-success';
-                                $statusLabel = 'Available';
-                            } else {
-                                $status = 'ended';
-                                $statusClass = 'text-bg-secondary';
-                                $statusLabel = 'Ended';
-                            }
-                            ?>
-                        <?php
+                        $status = $exam['status'];
 
                         $statusClass = match ($status) {
                             'upcoming' => 'text-bg-warning',

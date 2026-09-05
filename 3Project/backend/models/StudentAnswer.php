@@ -147,4 +147,61 @@ class StudentAnswer
             && (int) $result['selected_correct']//////true only if all selected are correct
             === (int) $result['total_correct'];///////true only if all correct are selected 
     }
+
+    public function calculateMark(
+        int $resultId,
+        array $examQuestions
+    ): float {
+        $mark = 0.0;
+
+        foreach ($examQuestions as $question) {
+            if ($this->isCorrect(
+                $resultId,
+                (int) $question['id']
+            )) {
+                $mark += (float) $question['weight'];
+            }
+        }
+
+        return $mark;
+    }
+
+    public function saveSubmission(
+        int $resultId,
+        array $examQuestions,
+        mixed $submittedAnswers
+    ): bool {
+        if (!is_array($submittedAnswers)) {
+            $submittedAnswers = [];
+        }
+
+        foreach ($examQuestions as $question) {
+            $questionId = (int) $question['id'];
+            $choiceIds = $submittedAnswers[$questionId] ?? [];
+
+            if (!is_array($choiceIds)) {
+                $choiceIds = [$choiceIds];
+            }
+
+            $choiceIds = array_unique(
+                array_map('intval', $choiceIds)
+            );
+
+            foreach ($choiceIds as $choiceId) {
+                if ($choiceId <= 0) {
+                    continue;
+                }
+
+                if ($this->create(
+                    $resultId,
+                    $questionId,
+                    $choiceId
+                ) === null) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 }

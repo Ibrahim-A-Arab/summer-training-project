@@ -48,44 +48,27 @@ class CourseController
             return $this->forbidden();
         }
 
-        return new ViewModel('courses/create');
-    }
-
-    public function store(): ViewModel
-    {
-        if (!$this->isTeacher()) {
-            return $this->forbidden();
+        if($_SERVER['REQUEST_METHOD'] === 'GET'){
+            return new ViewModel('courses/create');
         }
 
         $code = trim($_POST['course_code'] ?? '');
         $name = trim($_POST['course_name'] ?? '');
+        $validation = $this->courseModel->validate($code, $name);
 
-        if ($code === '' || $name === '') {
+        if (!$validation['valid']) {
             http_response_code(422);
 
             return new ViewModel('courses/create', [
-                'error' => 'Course code and name are required.',
+                'error' => $validation['error'],
                 'oldCode' => $code,
                 'oldName' => $name
             ]);
         }
 
-
-        if ($this->courseModel->getByCode($code) !== null) {
-            http_response_code(422);
-
-            return new ViewModel('courses/create', [
-                'error' => 'This course code already exists.',
-                'oldCode' => $code,
-                'oldName' => $name
-            ]);
-        }
-
-
-        $courseId = $this->courseModel->create($code, $name);
-
-        $this->courseTeacherModel->assignTeacher(
-            $courseId,
+        $this->courseModel->createWithTeacher(
+            $validation['code'],
+            $validation['name'],
             (int) $_SESSION['user_id']
         );
 
@@ -97,6 +80,7 @@ class CourseController
 
         exit;
     }
+
 
     private function isTeacher(): bool
     {

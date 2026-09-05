@@ -6,16 +6,19 @@ namespace App\Controllers;
 
 use App\Utils\ViewModel;
 use App\Models\CourseStudent;
+use App\Models\CourseTeacher;
 use App\Models\Exam;
 
 class DashboardController
 {
     private CourseStudent $courseStudentModel;
+    private CourseTeacher $courseTeacherModel;
     private Exam $examModel;
 
     public function __construct()
     {
         $this->courseStudentModel = new CourseStudent();
+        $this->courseTeacherModel = new CourseTeacher();
         $this->examModel = new Exam();
     }
 
@@ -25,8 +28,23 @@ class DashboardController
         $name = $_SESSION['name'] ?? '';
 
         if ($role === 'teacher') {
+            $teacherId = (int) $_SESSION['user_id'];
+            $courses = $this->courseTeacherModel
+                ->getCoursesByTeacher($teacherId);
+            $examCount = 0;
+
+            foreach ($courses as $course) {
+                $examCount += count(
+                    $this->examModel->getByCourseId(
+                        (int) $course['id']
+                    )
+                );
+            }
+
             return new ViewModel('dashboards/teacher',[
-                'name' => $name
+                'name' => $name,
+                'courseCount' => count($courses),
+                'examCount' => $examCount
             ]);
         }
         

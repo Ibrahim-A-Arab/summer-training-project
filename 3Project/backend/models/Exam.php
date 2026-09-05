@@ -93,6 +93,49 @@ class Exam
         return $this->db->lastInsertId();
     }
 
+    public function createWithQuestions(
+        int $courseId,
+        array $examData,
+        array $questions
+    ): int {
+        $examQuestionModel = new ExamQuestion();
+
+        try {
+            $this->db->beginTransaction();
+
+            $examId = $this->create(
+                $courseId,
+                $examData['name'],
+                $examData['start']->format('Y-m-d H:i:s'),
+                $examData['end']->format('Y-m-d H:i:s'),
+                $examData['shuffle']
+            );
+
+            foreach ($questions as $question) {
+                if (!$examQuestionModel->addQuestion(
+                    $examId,
+                    $question['id'],
+                    $question['position'],
+                    $question['weight']
+                )) {
+                    throw new \RuntimeException(
+                        'Could not add question to exam.'
+                    );
+                }
+            }
+
+            $this->db->commit();
+
+            return $examId;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function update(
         int $id,
         string $name,
@@ -117,11 +160,151 @@ class Exam
         );
     }
 
+    public function updateWithQuestions(
+        int $id,
+        array $examData,
+        array $questions
+    ): bool {
+        $examQuestionModel = new ExamQuestion();
+
+        try {
+            $this->db->beginTransaction();
+
+            if (!$this->update(
+                $id,
+                $examData['name'],
+                $examData['start']->format('Y-m-d H:i:s'),
+                $examData['end']->format('Y-m-d H:i:s'),
+                $examData['shuffle']
+            )) {
+                throw new \RuntimeException('Could not update exam.');
+            }
+
+            if (!$examQuestionModel->removeAllByExam($id)) {
+                throw new \RuntimeException(
+                    'Could not replace exam questions.'
+                );
+            }
+
+            foreach ($questions as $question) {
+                if (!$examQuestionModel->addQuestion(
+                    $id,
+                    $question['id'],
+                    $question['position'],
+                    $question['weight']
+                )) {
+                    throw new \RuntimeException(
+                        'Could not update the exam questions.'
+                    );
+                }
+            }
+
+            $this->db->commit();
+
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function delete(int $id): bool
     {
         return $this->db->execute(
             'DELETE FROM exams WHERE id = :id',
             ['id' => $id]
         );
+    }
+
+    public function validate(array $data): array
+    {
+        $name = trim((string) ($data['name'] ?? ''));
+        $startInput = (string) ($data['start_time'] ?? '');
+        $endInput = (string) ($data['end_time'] ?? '');
+
+        if (
+            $name === ''
+            || $startInput === ''
+            || $endInput === ''
+        ) {
+            return [
+                'valid' => false,
+                'error' => 'Complete all exam information.'
+            ];
+        }
+
+        $timezone = new \DateTimeZone('Asia/Jerusalem');
+
+        $start = \DateTimeImmutable::createFromFormat(
+            'Y-m-d\TH:i',
+            $startInput,
+            $timezone
+        );
+
+        $end = \DateTimeImmutable::createFromFormat(
+            'Y-m-d\TH:i',
+            $endInput,
+            $timezone
+        );
+
+        if ($start === false || $end === false) {
+            return [
+                'valid' => false,
+                'error' => 'Enter valid start and end times.'
+            ];
+        }
+
+        if ($end <= $start) {
+            return [
+                'valid' => false,
+                'error' => 'End time must be after start time.'
+            ];
+        }
+
+        $now = new \DateTimeImmutable('now', $timezone);
+
+        if ($start <= $now) {
+            return [
+                'valid' => false,
+                'error' => 'Start time must be in the future.'
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'data' => [
+                'name' => $name,
+                'start' => $start,
+                'end' => $end,
+                'shuffle' => (bool) ($data['shuffle'] ?? false)
+            ]
+        ];
+    }
+
+    public function getStatus(array $exam): string
+    {
+        $now = new \DateTimeImmutable();
+        $start = new \DateTimeImmutable($exam['start_time']);
+        $end = new \DateTimeImmutable($exam['end_time']);
+
+        if ($now < $start) {
+            return 'upcoming';
+        }
+
+        return $now <= $end ? 'available' : 'ended';
+    }
+
+    public function isAvailable(array $exam): bool
+    {
+        return $this->getStatus($exam) === 'available';
+    }
+
+    public function canModify(array $exam, bool $hasAttempts): bool
+    {
+        return !$hasAttempts
+            && $this->getStatus($exam) === 'upcoming';
     }
 }

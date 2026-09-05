@@ -140,24 +140,13 @@ require __DIR__ . '/../../partials/header.phtml';
 
                     <?php foreach ($exams as $exam): ?>
                         <?php
-                        $now = new DateTimeImmutable();
-                        $start = new DateTimeImmutable(
-                            $exam['start_time']
-                        );
-                        $end = new DateTimeImmutable(
-                            $exam['end_time']
-                        );
+                        $status = ucfirst($exam['status']);
 
-                        if ($now < $start) {
-                            $status = 'Upcoming';
-                            $badgeClass = 'text-bg-warning';
-                        } elseif ($now <= $end) {
-                            $status = 'Available';
-                            $badgeClass = 'text-bg-success';
-                        } else {
-                            $status = 'Ended';
-                            $badgeClass = 'text-bg-secondary';
-                        }
+                        $badgeClass = match ($exam['status']) {
+                            'upcoming' => 'text-bg-warning',
+                            'available' => 'text-bg-success',
+                            default => 'text-bg-secondary'
+                        };
                         ?>
 
                         <div class="list-group-item p-4">

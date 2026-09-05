@@ -81,6 +81,11 @@ class CourseStudent
         ) !== [];
     }
 
+    public function canEnroll(int $courseId, int $studentId): bool
+    {
+        return !$this->isEnrolled($courseId, $studentId);
+    }
+
     public function getAvailableCourses(
         int $studentId,
         string $search = ''

@@ -55,6 +55,32 @@ class Course
         return $this->getById($id) !== null;
     }
 
+    public function validate(string $code, string $name): array
+    {
+        $code = trim($code);
+        $name = trim($name);
+
+        if ($code === '' || $name === '') {
+            return [
+                'valid' => false,
+                'error' => 'Course code and name are required.'
+            ];
+        }
+
+        if ($this->getByCode($code) !== null) {
+            return [
+                'valid' => false,
+                'error' => 'This course code already exists.'
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'code' => $code,
+            'name' => $name
+        ];
+    }
+
     public function create(string $code, string $name): int
     {
         $this->db->execute(
@@ -67,6 +93,39 @@ class Course
         );
 
         return $this->db->lastInsertId();
+    }
+
+    public function createWithTeacher(
+        string $code,
+        string $name,
+        int $teacherId
+    ): int {
+        $courseTeacherModel = new CourseTeacher();
+
+        try {
+            $this->db->beginTransaction();
+
+            $courseId = $this->create($code, $name);
+
+            if (!$courseTeacherModel->assignTeacher(
+                $courseId,
+                $teacherId
+            )) {
+                throw new \RuntimeException(
+                    'Could not assign the teacher to the course.'
+                );
+            }
+
+            $this->db->commit();
+
+            return $courseId;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function update(

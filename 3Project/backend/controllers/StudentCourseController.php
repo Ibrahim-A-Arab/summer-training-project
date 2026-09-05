@@ -76,7 +76,7 @@ class StudentCourseController
             exit;
         }
 
-        if (!$this->courseStudentModel->isEnrolled($courseId, $studentId)) {
+        if ($this->courseStudentModel->canEnroll($courseId, $studentId)) {
             $this->courseStudentModel->enroll($courseId, $studentId);
         }
 
@@ -114,6 +114,12 @@ class StudentCourseController
         }
 
         $exams = $this->examModel->getByCourseId($courseId);
+
+        foreach ($exams as &$exam) {
+            $exam['status'] = $this->examModel->getStatus($exam);
+        }
+
+        unset($exam);
 
         return new ViewModel('student/courses/show', [
             'course' => $course,

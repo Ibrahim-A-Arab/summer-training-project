@@ -41,83 +41,32 @@ class AuthController
             'oldEmail' => $email
         ];
 
-        if (
-            $personalId === ''
-            || $name === ''
-            || $email === ''
-            || $password === ''
-            || $passwordConfirmation === ''
-            || $role === ''
-        ) {
+        $validation = $this->userModel->validateRegistration([
+            'personal_id' => $personalId,
+            'name' => $name,
+            'email' => $email,
+            'password' => $password,
+            'password_confirmation' => $passwordConfirmation,
+            'role' => $role
+        ]);
+
+        if (!$validation['valid']) {
             http_response_code(422);
 
             return new ViewModel('auth/signUp', [
                 ...$oldData,
-                'error' => 'All fields are required, fill all fields.'
+                'error' => $validation['error']
             ]);
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            http_response_code(422);
-
-            return new ViewModel('auth/signUp', [
-                ...$oldData,
-                'error' => 'Enter a valid email address.'
-            ]);
-        }
-
-
-        if (!in_array($role, ['student', 'teacher'], true)) {
-            http_response_code(422);
-
-            return new ViewModel('auth/signUp', [
-                ...$oldData,
-                'error' => 'select a role to register'
-            ]);
-        }
-
-        if (strlen($password) < 8) {
-            http_response_code(422);
-
-            return new ViewModel('auth/signUp', [
-                ...$oldData,
-                'error' => 'Password must contain at least 8 characters.'
-            ]);
-        }
-
-        if ($password !== $passwordConfirmation) {
-            http_response_code(422);
-
-            return new ViewModel('auth/signUp', [
-                ...$oldData,
-                'error' => 'Passwords do not match.'
-            ]);
-        }
-
-        if ($this->userModel->getByEmail($email) !== null) {
-            http_response_code(422);
-
-            return new ViewModel('auth/signUp', [
-                ...$oldData,
-                'error' => 'email already registered, login to your account'
-            ]);
-        }
-
-        if ($this->userModel->getByPersonalId($personalId) !== null) {
-            http_response_code(422);
-
-            return new ViewModel('auth/signUp', [
-                ...$oldData,
-                'error' => 'personal id is already registered, login to your account'
-            ]);
-        }
+        $userData = $validation['data'];
 
         $completedSignUp = $this->userModel->create(
-            $personalId,
-            $name,
-            $email,
-            password_hash($password, PASSWORD_DEFAULT),
-            $role
+            $userData['personal_id'],
+            $userData['name'],
+            $userData['email'],
+            $userData['password_hash'],
+            $userData['role']
         );
 
         if (!$completedSignUp) {
@@ -143,15 +92,12 @@ class AuthController
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        $user = $this->userModel->getByEmail($email);
+        $user = $this->userModel->authenticate(
+            $email,
+            $password
+        );
 
-        if (
-            $user === null
-            || !password_verify(
-                $password,
-                $user['password_hash']
-            )
-        ) {
+        if ($user === null) {
             http_response_code(422);
 
             return new ViewModel('auth/login', [

@@ -113,8 +113,64 @@ class ExamResult
         return $this->db->lastInsertId();
     }
 
+    public function submitAttempt(
+        int $examId,
+        int $studentId,
+        array $questions,
+        mixed $submittedAnswers
+    ): int {
+        $studentAnswerModel = new StudentAnswer();
+
+        try {
+            $this->db->beginTransaction();
+
+            if (!$this->canCreateAttempt($examId, $studentId)) {
+                throw new \RuntimeException(
+                    'An attempt already exists for this exam.'
+                );
+            }
+
+            $resultId = $this->create($examId, $studentId);
+
+            if (!$studentAnswerModel->saveSubmission(
+                $resultId,
+                $questions,
+                $submittedAnswers
+            )) {
+                throw new \RuntimeException(
+                    'An invalid answer was submitted.'
+                );
+            }
+
+            $mark = $studentAnswerModel->calculateMark(
+                $resultId,
+                $questions
+            );
+
+            if (!$this->submit($resultId, $mark)) {
+                throw new \RuntimeException(
+                    'The exam could not be submitted.'
+                );
+            }
+
+            $this->db->commit();
+
+            return $resultId;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function submit(int $id, float $mark): bool
     {
+        if ($mark < 0) {
+            return false;
+        }
+
         return $this->db->execute(
             'UPDATE exam_results
             SET mark = :mark,
@@ -146,14 +202,27 @@ class ExamResult
         ) !== [];
     }
 
-    public function hasAnyAttempt(int $examId): bool
+    public function canCreateAttempt(
+        int $examId,
+        int $userId
+    ): bool {
+        return $this->getByExamAndStudent($examId, $userId)
+            === null;
+    }
+
+    public function hasAnyStudentAttempt(int $examId): bool
     {
         return $this->db->select(
-            'SELECT id
-            FROM exam_results
-            WHERE exam_id = :exam_id
+            'SELECT er.id
+            FROM exam_results er
+            JOIN users u ON u.id = er.student_id
+            WHERE er.exam_id = :exam_id
+                AND u.role = :role
             LIMIT 1',
-            ['exam_id' => $examId]
+            [
+                'exam_id' => $examId,
+                'role' => 'student'
+            ]
         ) !== [];
     }
 }
